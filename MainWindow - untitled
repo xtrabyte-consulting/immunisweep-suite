@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QWidget" name="gridLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>13</x>
+      <y>0</y>
+      <width>771</width>
+      <height>531</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <item row="1" column="0">
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <widget class="QLabel" name="setFreqStartLabel">
+         <property name="text">
+          <string>Frequency Start (mHz):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QRadioButton" name="setFreqStopButton">
+         <property name="text">
+          <string>Frequency Stop (mHz):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QRadioButton" name="setStepDwellButton">
+         <property name="text">
+          <string>Step Dwell (ms):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QRadioButton" name="setAMFreqButton">
+         <property name="text">
+          <string>AM Frequency (kHz):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QRadioButton" name="setStepCountButton">
+         <property name="text">
+          <string>Step Count:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QRadioButton" name="setAMDepthButton">
+         <property name="text">
+          <string>AM Depth (%):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QDoubleSpinBox" name="freqStartBox"/>
+       </item>
+       <item row="1" column="2">
+        <widget class="QDoubleSpinBox" name="freqStopBox"/>
+       </item>
+       <item row="2" column="2">
+        <widget class="QDoubleSpinBox" name="stepDwellBox"/>
+       </item>
+       <item row="3" column="2">
+        <widget class="QSpinBox" name="stepCountBox"/>
+       </item>
+       <item row="4" column="2">
+        <widget class="QDoubleSpinBox" name="amDepthBox"/>
+       </item>
+       <item row="5" column="2">
+        <widget class="QDoubleSpinBox" name="amFreqBox"/>
+       </item>
+       <item row="6" column="0">
+        <widget class="QPushButton" name="startButton">
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="0">
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="setFieldIntensityBox"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="currentFieldIntesityLabel">
+         <property name="text">
+          <string>Current Field Intensity (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="fieldProbeLabel">
+         <property name="text">
+          <string>ETS Lindgren Field Probe </string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLCDNumber" name="fieldIntensityLcd">
+         <property name="smallDecimalPoint">
+          <bool>false</bool>
+         </property>
+         <property name="digitCount">
+          <number>5</number>
+         </property>
+         <property name="value" stdset="0">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="sigGenLabel">
+         <property name="text">
+          <string>Agilent Signal Generator </string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="connectSigGenButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLCDNumber" name="controlLoopAdjLcd">
+         <property name="smallDecimalPoint">
+          <bool>false</bool>
+         </property>
+         <property name="digitCount">
+          <number>5</number>
+         </property>
+         <property name="value" stdset="0">
+          <double>-1.000000000000000</double>
+         </property>
+         <property name="intValue" stdset="0">
+          <number>-1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="connectFieldProbeButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="desiredIntensityLabel">
+         <property name="text">
+          <string>Desired Field Intensity (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="outputAdjustmentLabel">
+         <property name="text">
+          <string>Output Power Adjustment (dB)</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="1">
+      <widget class="QGraphicsView" name="topGraphicsView"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QGraphicsView" name="bottomGraphicsView"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
