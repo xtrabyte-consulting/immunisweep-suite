@@ -15,6 +15,21 @@ Features:
     b. AM Modulation Frequency
     c. AM Modulation Depth
 
+Sig-Gen LAN Settings:
+IP Address: 192.168.80.79 (was 192.168.80.87)
+Gateway: 192.168.80.100 (was 192.168.80.100)
+Port: 5024
+
+Use :FREQ and :POW and :OUTP:STAT ON
+:AM:DEPT:LIN 30
+:AM:STAT ON
+:AM:STAT?
+
+sigGen = socketscpi.SocketInstrument('192.168.100.79')
+
+sigGen.query('*IDN?')
+
+
 ETS Lindgren DLL Family Strings:
 HI-Any HI-6005 MS HI-6005 HS HI-6005
  Baud rates are at 9600 and 115.2 K for the laser models

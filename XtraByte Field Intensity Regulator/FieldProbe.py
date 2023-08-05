@@ -24,7 +24,7 @@ class FieldProbe(QObject):
     def start(self):
         self.is_running = True
         try:
-            self.serial = serial.Serial(self. serial_port, baudrate=9600, bytesize=serial.SEVENBITS, parity=serial.PARITY_ODD, stopbits=1, timeout=5)
+            self.serial = serial.Serial(self.serial_port, baudrate=9600, bytesize=serial.SEVENBITS, parity=serial.PARITY_ODD, stopbits=1, timeout=5)
         except ValueError as e:
             self.is_running = False
             self.serialConnectionError.emit(str(e))
@@ -57,7 +57,7 @@ class FieldProbe(QObject):
         self.command = b'TF'
         self.read_received = True
     
-    def startDataTransfer(self):
+    def getEField(self):
         self.command = b'D5'
         self.read_received = True
 

@@ -34,8 +34,8 @@ class PIDController():
         self.prev_error = 0
         self.integral = 0
         
-    def calculate(self, desired_freq, current_freq):
-        error = desired_freq - current_freq
+    def calculate(self, desired_field: float, current_field: float) -> float:
+        error = desired_field - current_field
         self.integral += error
         derivative = error - self.prev_error
 
@@ -67,47 +67,65 @@ class FieldIntensityController(QMainWindow, Ui_MainWindow):
         self.fieldProbe = FieldProbe('COM5')
         self.fieldProbe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.fieldProbe.identityReceived.connect(self.on_fieldProbe_identityReceived)
-        self.signalGenerator = SignalGenerator('192.168.255.255', 524)
+        self.fieldProbe.serialConnectionError.connect(self.on_fieldProbe_serialConnectionError)
+        self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
+        self.signalGenerator = SignalGenerator('192.168.80.79', 5024)
+        self.signalGenerator.instrument_detected.connect(self.on_sigGen_instrument_detected)
+        self.signalGenerator.instrument_connected.connect(self.on_sigGen_instrument_connected)
+        self.signalGenerator.current_frequency.conenct(self.on_sigGen_current_frequency)
+        self.signalGenerator.current_power.connect(self.on_sigGen_current_power)
+        self.signalGenerator.error_occured.connect(self.on_sigGen_error_occured)
+        #self.connectFieldProbeButton.pressed.connect(self.on_connectFieldProbeButton_pressed)
+        #self.connectSigGenButton.pressed.connect(self.on_connectSigGenButton_pressed)
+        self.freqStartBox.valueChanged.connect(self.on_freqStartBox_valueChanged)
+        self.freqStopBox.valueChanged.connect(self.on_freqStopBox_valueChanged)
+        self.stepDwellBox.valueChanged.connect(self.on_stepDwellBox_valueChanged)
+        self.stepCountBox.valueChanged.connect(self.on_stepCountBox_valueChanged)
+        self.amDepthBox.valueChanged.connect(self.on_amDepthBox_valueChanged)
+        self.amFreqBox.valueChanged.connect(self.on_amFreqBox_valueChanged)
+        self.setFieldIntensityBox.valueChanged.connect(self.on_setFieldIntensityBox_valueChanged)
+        self.startButton.pressed.connect(self.on_startButton_pressed)
+        self.pidController = PIDController(1.0, 1.0, 0.5)
+        self.sweepRunning = False
+        
+    def startDeviceDetection(self):
+        self.signalGenerator.detect()
+        self.fieldProbe.start()
     
-    def detectSigGen(self):
-        self.deleteLater
+    def on_freqStartBox_valueChanged(self, freq: float):
+        if not self.sweepRunning:
+            self.signalGenerator.setFrequency(int(freq))
+        self.startFrequency = freq
         
-    def sigGenDetected(self):
-        self.deleteLater
+    def on_freqStopBox_valueChanged(self, freq: float):
+        self.stopFrequency = freq
         
-    def connectSigGen(self):
-        self.deleteLater
+    def on_stepDwellBox_valueChanged(self, dwell: float):
+        self.stepDwell = dwell
         
-    def sigGenConnected(self):
-        self.deleteLater
-    
-    def connectFieldProbe(self):
-        self.deleteLater
+    def on_stepCountBox_valueChanged(self, count: int):
+        self.steps = count
         
+    def on_amDepthBox_valueChanged(self, depth: float):
+        self.amDepth = depth
+        if not self.sweepRunning:
+            self.signalGenerator.setAmModDepth(depth)
+
+    def on_amFreqBox_valueChanged(self, freq: float):
+        self.amFreq = freq
+      
     def on_setFieldIntensityBox_valueChanged(self, strength: float):
         self.currentOutputPower = 2 * strength / self.currentOutputFrequency
+        self.desiredFieldIntensity = strength
         
+    def on_startButton_pressed(self):
+        self.sweepRunning = True
+        self.signalGenerator.startFrequencySweep(self.startFrequency, self.stopFrequency, self.steps, self.stepDwell)
         
-    def setStartFrequency(self):
-        self.deleteLater
-        
-    def setStopFrequency(self):
-        self.deleteLater
-        
-    def setStepDwell(self):
-        self.deleteLater
-        
-    def setStepCount(self):
-        self.deleteLater
-        
-    def setAMDepth(self):
-        self.deleteLater
-        
-    def setAMFreq(self):
-        self.deleteLater
-        
-    def startSignalGeneration(self):
-        self.deleteLater
+    def displayAlert(self, text):
+        self.alert = QMessageBox()
+        self.alert.setText(text)
+        self.alert.exec()
     
     def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str, calibration: str):
         self.connectFieldProbeButton.setText('Connected')
@@ -116,19 +134,41 @@ class FieldIntensityController(QMainWindow, Ui_MainWindow):
       
     def on_fieldProbe_fieldIntensityReceived(self, intensity: float):
         self.measuredFieldIntensity = intensity
-        
+        self.fieldIntensityLcd.display(intensity)
+        calculatedPower = self.pidController.calculate(self.desiredFieldIntensity, intensity)
+        self.signalGenerator.setPower(calculatedPower)
         
     def on_fieldProbe_fieldProbeError(self, message: str):
-        self.deleteLater
+        print(message)
+        self.displayAlert(message)
+        
+    def on_fieldProbe_serialConnectionError(self, message: str):
+        print(message)
+        self.displayAlert(message)
     
-    def outputPowerSet(self, power: float):
-        self.deleteLater
+    def on_sigGen_instrument_detected(self, detected: bool):
+        if detected:
+            self.signalGenerator.stopDetection()
+            self.signalGenerator.connect()
+        else:
+            self.signalGenerator.retryDetection()
+            self.displayAlert("Signal Generator Disconnected. Please connect SG via LAN.")        
+    
+    def on_sigGen_instrument_connected(self, message: str):
+        self.connectSigGenButton.setText('Connected')
+        #TODO: self.connectSigGenButton.setIcon(':/icons/connected.png')
+        self.sigGenLabel.setText(''.join(message.split(',')))
         
-    def outputFrequencySet(self, frequency: float):
-        self.deleteLater
+    def on_sigGen_current_frequency(self, frequency: float):
+        self.currentOutputFrequency = frequency
+    
+    def on_sigGen_current_power(self, power: float):
+        self.currentOutputPower = power
+        self.controlLoopAdjLcd.display(power)
         
-    def signalGeneratorError(self, message: str):
-        self.deleteLater
+    def on_sigGen_error_occured(self, message: str):
+        print(message)
+        self.displayAlert(message)
 
         
 if __name__ == '__main__':
