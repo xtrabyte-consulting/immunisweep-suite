@@ -8,9 +8,8 @@ from PyQt5.QtGui import QPainter, QBitmap, QPolygon, QPen, QBrush, QColor
 from PyQt5.QtCore import Qt
 
 from MainWindow import Ui_MainWindow
-import MainWindow
-import SignalGenerator
-import FieldProbe
+from SignalGenerator import AgilentN5181A
+from FieldProbe import ETSLindgrenHI6006
 
 import os
 import sys
@@ -45,7 +44,7 @@ class PIDController():
 
         return output
 
-class FieldIntensityController(QMainWindow, Ui_MainWindow):
+class MainWindow(QMainWindow, Ui_MainWindow):
     
     desiredFieldIntensity = 0
     measuredFieldIntensity = 0
@@ -57,22 +56,20 @@ class FieldIntensityController(QMainWindow, Ui_MainWindow):
     amFreq = 1
     currentOutputPower = 0
     currentOutputFrequency = 1000 * startFrequency
-    signalGenerator: SignalGenerator = None
-    fieldProbe: FieldProbe = None
     
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.setWindowTitle('XtraByte Field Controller')
-        self.fieldProbe = FieldProbe('COM5')
+        self.fieldProbe = ETSLindgrenHI6006('COM5')
         self.fieldProbe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.fieldProbe.identityReceived.connect(self.on_fieldProbe_identityReceived)
         self.fieldProbe.serialConnectionError.connect(self.on_fieldProbe_serialConnectionError)
         self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
-        self.signalGenerator = SignalGenerator('192.168.80.79', 5024)
+        self.signalGenerator = AgilentN5181A('192.168.80.79', 5024)
         self.signalGenerator.instrument_detected.connect(self.on_sigGen_instrument_detected)
         self.signalGenerator.instrument_connected.connect(self.on_sigGen_instrument_connected)
-        self.signalGenerator.current_frequency.conenct(self.on_sigGen_current_frequency)
+        self.signalGenerator.current_frequency.connect(self.on_sigGen_current_frequency)
         self.signalGenerator.current_power.connect(self.on_sigGen_current_power)
         self.signalGenerator.error_occured.connect(self.on_sigGen_error_occured)
         #self.connectFieldProbeButton.pressed.connect(self.on_connectFieldProbeButton_pressed)
@@ -174,6 +171,7 @@ class FieldIntensityController(QMainWindow, Ui_MainWindow):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon(':/icons/field_controller.ico'))
+    #app.setWindowIcon(QtGui.QIcon(':/icons/field_controller.ico'))
     window = MainWindow()
-    app.exec_()
+    window.show()
+    sys.exit(app.exec_())

@@ -3,7 +3,7 @@ from serial import SerialException, SerialTimeoutException
 import threading
 from PyQt5.QtCore import QObject, pyqtSignal
 
-class FieldProbe(QObject):
+class ETSLindgrenHI6006(QObject):
     fieldIntensityReceived = pyqtSignal(float, float, float, float)
     identityReceived = pyqtSignal(str, str, str, str)
     batteryReceived = pyqtSignal(int)

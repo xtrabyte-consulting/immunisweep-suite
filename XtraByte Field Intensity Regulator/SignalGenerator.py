@@ -4,7 +4,7 @@ import threading
 import ping3
 from PyQt5.QtCore import QObject, pyqtSignal
 
-class SignalGenerator(QObject):
+class AgilentN5181A(QObject):
     instrument_connected = pyqtSignal(str)
     instrument_detected = pyqtSignal(bool)
     error_occured = pyqtSignal(str)
