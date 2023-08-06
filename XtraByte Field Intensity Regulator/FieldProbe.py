@@ -20,6 +20,7 @@ class ETSLindgrenHI6006(QObject):
         self.command: str = None
         self.battery_level: int = 100
         self.battery_flag: bool = True
+        self.blockSize = 34
     
     def start(self):
         self.is_running = True
@@ -46,6 +47,7 @@ class ETSLindgrenHI6006(QObject):
             self.serial.close()
         
     def commandInit(self):
+        self.blockSize = 34
         self.command = b'I'
         self.read_received = True
         
@@ -58,6 +60,7 @@ class ETSLindgrenHI6006(QObject):
         self.read_received = True
     
     def getEField(self):
+        self.blockSize = 24
         self.command = b'D5'
         self.read_received = True
 
@@ -70,30 +73,32 @@ class ETSLindgrenHI6006(QObject):
     def readSerial(self):
         while self.is_running:
             if self.serial.in_waiting > 0:
-                response = self.serial.readline().decode().strip()
+                response = self.serial.read(self.blockSize).decode().strip()
                 if response.startswith(':D'):
                     x_component = float(response[2:7])
                     y_component = float(response[7:12])
                     z_component = float(response[12:17])
                     composite = float(response[17:22])
                     self.battery_flag = response[22] == 'F'
-                    print(x_component, y_component, z_component, composite)
                     self.fieldIntensityReceived.emit(x_component, y_component, z_component, composite)
                 elif response.startswith(':I'):
-                    model = response[2:6]
-                    revision = response[6:16]
-                    serial_no = response[16:24]
-                    calibration = response[24:32]
-                    self.battery_flag = response[32] == 'F'
-                    print(model, revision, serial_no, calibration)
-                    self.probeIdentityReceived.emit(model, revision, serial_no, calibration)
+                    try:
+                        model = response[2:6]
+                        revision = response[6:16]
+                        serial_no = response[16:24]
+                        calibration = response[24:32]
+                        self.battery_flag = response[32] == 'F'
+                        print(model, revision, serial_no, calibration)
+                        self.identityReceived.emit(model, revision, serial_no, calibration)
+                    except IndexError as e:
+                        print(e)
                 elif response.startswith(':B'):
                     self.battery_level = int(response[2:4], 16)
                     self.battery_flag = response[4] == 'F'
-                    self.probeBatteryReceived.emit(self.battery_level)
+                    self.batteryReceived.emit(self.battery_level)
                 elif response.startswith(':T'):
                     temperature = float(response[2:6])
-                    self.probeTemperatureReceived.emit(temperature)
+                    self.temperatureReceived.emit(temperature)
                 elif response.startswith(':E'):
                     e = int(response[2])
                     if e == 1:

@@ -20,6 +20,9 @@ IP Address: 192.168.80.79 (was 192.168.80.87)
 Gateway: 192.168.80.100 (was 192.168.80.100)
 Port: 5024
 
+Freq 250 kHz to 6 GHz
+Power -110 dBm to 14 dBm
+
 Use :FREQ and :POW and :OUTP:STAT ON
 :AM:DEPT:LIN 30
 :AM:STAT ON

@@ -10,8 +10,11 @@ class AgilentN5181A(QObject):
     error_occured = pyqtSignal(str)
     current_power = pyqtSignal(float)
     current_frequency = pyqtSignal(float)
+    ampModDepthReceived = pyqtSignal(float)
+    rfOutStateReceived = pyqtSignal(bool)
+    sweepFinished = pyqtSignal()
     
-    def __init__(self, ip_address: str = '192.168.80.79',  port: int = 5024):
+    def __init__(self, ip_address: str = '192.168.100.79',  port: int = 5024):
         super().__init__()
         self.ip_address = ip_address
         self.port = port
@@ -27,6 +30,7 @@ class AgilentN5181A(QObject):
         self.ping_started = True
         self.ping_thread = threading.Thread(target=self.check_static_ip)
         self.count = 4
+        self.connected = False
         self.ping_thread.start()
         
     def retryDetection(self):
@@ -39,7 +43,7 @@ class AgilentN5181A(QObject):
     def connect(self):
         self.is_running = True
         try:
-            self.sig_gen = socketscpi.SocketInstrument(self.ip_address, port=self.port, timeout=5)
+            self.sig_gen = socketscpi.SocketInstrument(self.ip_address)
             self.instrument_connected.emit(self.sig_gen.instId)
             print(self.sig_gen.instId)
             self.write_thread = threading.Thread(target=self.writeSCPI)
@@ -53,8 +57,15 @@ class AgilentN5181A(QObject):
         self.read_command = '*IDN?'
         self.new_command = True
         
-    def setFrequency(self, freq: int):
-        self.write_command = f':FREQ {str(freq)} MHz'
+    def setFrequency(self, freq: float):
+        suffix = 'MHz'
+        if freq > 6000.0:
+            freq = 6000.0
+        if freq < 1:
+            if freq < 0.1:
+                freq = 0.1
+            suffix = 'kHz'
+        self.write_command = f':FREQ {str(freq)} {suffix}'
         self.read_command = ':FREQ?'
         self.new_command = True
         
@@ -63,23 +74,39 @@ class AgilentN5181A(QObject):
         self.read_command = ':POW?'
         self.new_command = True
         
-    def setAmpModOn(self, state: bool):
-        self.write_command = f':OUTP:MOD:STAT {"ON" if state else "OFF"}'
-        #TODO: ':AM:STAT ON' & 'OUTP:MOD:TYPE AM'
-        self.read_command = 'OUTP:MOD:STAT?'
+    def setModulationType(self, am: bool):
+        self.write_command = f':OUTP:MOD:TYPE {"AM" if am else "PM"}'
+        #TODO: 'OUTP:MOD:STAT ON'
+        self.read_command = ':OUTP:MOD:STAT?'
         self.new_command = True
         
-    def setAmpModDepth(self, depth: int):
+    def setModulationState(self, on: bool):
+        self.write_command = f':AM:STAT {"ON" if on else "OFF"}'
+        self.read_command = ':AM:STAT?'
+        self.new_command = True
+        
+    def setAmpModDepth(self, depth: float):
         self.write_command = f':AM:DEPT:LIN {str(depth)}'
         self.read_command = ':AM:STAT?'
         self.new_command = True
     
+    def setRFOut(self, on: bool):
+        self.write_command = f':OUTP:STAT {"ON" if on else "OFF"}'
+        self.read_command = ':OUTP:STAT?'
+        self.new_command = True
         # :SWE:DWELL
         # :LIST:TRIG:SOUR IMM
         # :SWE:GEN: STEP
         # :SWE:POIN <number of teps>
         # :SWE:SPAC LIN|LOG
-        
+
+    def clearErrors(self):
+        try:
+            self.sig_gen.err_check()
+        except socketscpi.SockInstError as e:
+            print(e)
+            #self.error_occured.emit(e)
+
     def startFrequencySweep(self, start: int, stop: int, steps: int, dwell: int):
         self.sweepThread = threading.Thread(target=self.sweepFrequency, args=(start, stop, steps, dwell))
         self.sweepThread.start()
@@ -93,6 +120,7 @@ class AgilentN5181A(QObject):
             self.setFrequency(current)
             current += step
             time.sleep(dwell)
+        self.sweepFinished.emit()
     
     def writeSCPI(self):
         while self.is_running:
@@ -101,28 +129,36 @@ class AgilentN5181A(QObject):
                 done = self.sig_gen.query('*OPC?')
                 print(str(done))
                 state = self.sig_gen.query(self.read_command)
+                self.new_command = False
                 if self.write_command[:4] == ':FRE':
                     self.current_frequency.emit(float(state))
                 elif self.write_command[:4] == ':POW':
                     self.current_power.emit(float(state))
                 elif self.write_command[:4] == '*IDN':
                     self.instrument_connected.emit(state)
-                self.new_command = False
+                elif self.write_command[:9] == ':OUTP:MOD':
+                    self.setModulationState(True)
+                elif self.write_command[:4] == ':AM:':
+                    self.ampModDepthReceived.emit(float(state))
+                elif self.write_command[:10] == ':OUTP:STAT':
+                    self.rfOutStateReceived.emit(True if state == '1' else False)
                 
     def check_static_ip(self):
         while self.ping_started:
-            try:
-                response_time = ping3.ping(self.ip_address, timeout = 0.5)
-                if response_time is not None and response_time:
-                    if response_time:
-                        self.instrument_detected.emit(True)
-                else:
+            if not self.connected:
+                try:
+                    response_time = ping3.ping(self.ip_address, timeout = 0.5)
+                    if response_time is not None and response_time:
+                        if response_time:
+                            self.instrument_detected.emit(True)
+                            self.connected = True
+                    else:
+                        if (self.count == 0):
+                            self.instrument_detected.emit(False)
+                        else:
+                            self.count -= 1
+                except Exception as e:
                     if (self.count == 0):
-                        self.instrument_detected.emit(False)
+                            self.error_occured.emit(f'Network error occurred: {str(e)}')
                     else:
                         self.count -= 1
-            except Exception as e:
-                if (self.count == 0):
-                        self.error_occured.emit(f'Network error occurred: {str(e)}')
-                else:
-                    self.count -= 1
