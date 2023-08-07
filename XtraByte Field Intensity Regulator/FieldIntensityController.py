@@ -93,6 +93,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.amFreqBox.valueChanged.connect(self.on_amFreqBox_valueChanged)
         self.setFieldIntensityBox.valueChanged.connect(self.on_setFieldIntensityBox_valueChanged)
         self.startButton.pressed.connect(self.on_startButton_pressed)
+        self.freqGroup = QButtonGroup()
+        self.freqGroup.addButton(self.linearSweepButton)
+        self.freqGroup.addButton(self.expSweepButton)
+        self.freqGroup.addButton(self.sweepOffButton)
+        self.modGroup = QButtonGroup()
+        self.modGroup.addButton(self.ampModButton)
+        self.modGroup.addButton(self.phaseModButton)
+        self.modGroup.addButton(self.modOffButton)
         self.linearSweepButton.toggled.connect(self.on_linearSweepButton_toggled)
         self.expSweepButton.toggled.connect(self.on_expSweepButton_toggled)
         self.sweepOffButton.toggled.connect(self.on_sweepOffButton_toggled)
@@ -101,12 +109,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modOffButton.toggled.connect(self.on_modOffButton_toggled)
         self.pidController = PIDController(1.0, 1.0, 0.5)
         self.sweepRunning = False
+        self.setOn = True
+        self.pauseButton.setText("Clear Err")
         self.startDeviceDetection()
         
     def startDeviceDetection(self):
         self.alerted = False
         self.signalGenerator.detect()
         self.fieldProbe.start()
+
+    def killThreads(self):
+        self.fieldProbe.stop()
+        #self.signalGenerator.stopDetection()
+        self.signalGenerator.stop()
     
     def on_connectFieldProbeButton_pressed(self):
         self.fieldProbe.start()
@@ -136,13 +151,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.amFreq = freq
       
     def on_setFieldIntensityBox_valueChanged(self, strength: float):
-        self.currentOutputPower = math.log10(float(strength)) * 20
-        if self.currentOutputPower > 14:
-            self.currentOutputPower = 14.0
-        if self.currentOutputPower < -110:
-            self.currentOutputPower = -110.0
         self.desiredFieldIntensity = float(strength)
-        self.controlLoopAdjLcd.display(self.currentOutputPower)
 
     def on_pauseButton_pressed(self):
         #TODO: Make it a clear button
@@ -151,20 +160,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_startButton_pressed(self):
         #TODO: Start/Pause
         #TODO: Dis/Enable Freq Settings
-        self.signalGenerator.setRFOut(True)
+        if self.rfOutOn:
+            self.signalGenerator.setRFOut(False)
+        else:
+            self.signalGenerator.setRFOut(True)
         
     def displayAlert(self, text):
         self.alert = QMessageBox()
         self.alert.setText(text)
         self.alert.exec()
     
-    def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str, calibration: str):
+    def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str):
         self.connectFieldProbeButton.setText('Connected')
         #TODO: self.connectFieldProbeButton.setIcon(':/icons/connected.png')
         self.fieldProbeLabel.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial)
         self.fieldProbe.getEField()
       
-    def on_fieldProbe_fieldIntensityReceived(self, intensity: float):
+    def on_fieldProbe_fieldIntensityReceived(self, x, y, z, intensity: float):
         self.measuredFieldIntensity = intensity
         self.fieldIntensityLcd.display(intensity)
         if self.rfOutOn:
@@ -174,13 +186,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 output = 14
             if output < -110:
                 output = -110
-            print("Squeezed: " + str(output))
             self.signalGenerator.setPower(output)
-        #calculatedPower = math.log10(output) * 20
-        #print("Power Out: " + str(calculatedPower))
         
     def on_fieldProbe_fieldProbeError(self, message: str):
-        print(message)
+        print(f"Probe Error: {message}")
         self.displayAlert(message)
         
     def on_fieldProbe_serialConnectionError(self, message: str):
@@ -190,13 +199,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_sigGen_rfOutStateReceived(self, on: bool):
         if on:
             print('RF On')
+            self.startButton.setText('Stop')
             self.rfOutOn = True
             if self.sweepOn:
                 self.signalGenerator.startFrequencySweep(self.startFrequency, self.stopFrequency, self.steps, self.stepDwell)
                 self.sweepRunning = True
         else:
             print("RF Off")
+            self.startButton.setText('Start')
             self.rfOutOn = False
+            if self.sweepOn and self.sweepRunning:
+                self.signalGenerator.stopFrequencySweep()
+                self.sweepRunning = False
             # Stop Freq Sweep
         self.pidController.clear()
     
@@ -207,7 +221,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.signalGenerator.retryDetection()
             if not self.alerted:
-                self.displayAlert("Signal Generator Disconnected. Please connect SG via LAN.")
+                self.displayAlert("Signal Generator Disconnected. Please connect via LAN.")
                 self.alerted = True        
     
     def on_sigGen_instrument_connected(self, message: str):
@@ -229,101 +243,68 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_sigGen_error_occured(self, message: str):
         print(message)
         self.displayAlert(message)
-        
+    
+    def disableSweepButtons(self, state: bool):
+        self.freqStopBox.setDisabled(state)
+        self.stepDwellBox.setDisabled(state)
+        self.stepCountBox.setDisabled(state)
+    
+    def disableModButtons(self, state: bool):
+        self.amDepthBox.setDisabled(state)
+        self.amFreqBox.setDisabled(state)
+    
     def on_linearSweepButton_toggled(self):
         if self.linearSweepButton.isChecked():
             self.sweepOn = True
-            self.sweepOffButton.setChecked(False)
-            self.expSweepButton.setChecked(False)
-            self.freqStopBox.setDisabled(False)
-            self.stepDwellBox.setDisabled(False)
-            self.stepCountBox.setDisabled(False)
+            self.disableSweepButtons(False)
         else:
             self.sweepOn = False
-            self.sweepOffButton.setChecked(True)
-            self.expSweepButton.setChecked(False)
-            self.freqStopBox.setDisabled(True)
-            self.stepDwellBox.setDisabled(True)
-            self.stepCountBox.setDisabled(True)
+            self.disableSweepButtons(True)
             
     def on_expSweepButton_toggled(self):
         if self.expSweepButton.isChecked():
             self.sweepOn = True
-            self.sweepOffButton.setChecked(False)
-            self.linearSweepButton.setChecked(False)
-            self.freqStopBox.setDisabled(False)
-            self.stepDwellBox.setDisabled(False)
-            self.stepCountBox.setDisabled(False)
+            self.disableSweepButtons(False)
         else:
             self.sweepOn = False
-            self.sweepOffButton.setChecked(True)
-            self.linearSweepButton.setChecked(False)
-            self.freqStopBox.setDisabled(True)
-            self.stepDwellBox.setDisabled(True)
-            self.stepCountBox.setDisabled(True)
+            self.disableSweepButtons(True)
     
     def on_sweepOffButton_toggled(self):
         if self.sweepOffButton.isChecked():
             self.sweepOn = False
-            self.expSweepButton.setChecked(False)
-            self.linearSweepButton.setChecked(False)
-            self.freqStopBox.setDisabled(True)
-            self.stepDwellBox.setDisabled(True)
-            self.stepCountBox.setDisabled(True)
+            self.disableSweepButtons(True)
         else:
             self.sweepOn = True
-            self.sweepOffButton.setChecked(False)
-            self.linearSweepButton.setChecked(True)
-            self.freqStopBox.setDisabled(False)
-            self.stepDwellBox.setDisabled(False)
-            self.stepCountBox.setDisabled(False)
+            self.disableSweepButtons(False)
         
     def on_ampModButton_toggled(self):
         if self.ampModButton.isChecked():
             self.modulationOn = True
-            self.phaseModButton.setChecked(False)
-            self.modOffButton.setChecked(False)
-            self.amDepthBox.setDisabled(False)
-            self.amFreqBox.setDisabled(False)
+            self.disableModButtons(False)
             self.signalGenerator.setModulationType(True)
         else:
             self.modulationOn = False
-            self.phaseModButton.setChecked(False)
-            self.modOffButton.setChecked(True)
-            self.amDepthBox.setDisabled(True)
-            self.amFreqBox.setDisabled(True)
+            self.disableModButtons(True)
             self.signalGenerator.setModulationState(False)
             
     def on_phaseModButton_toggled(self):
         if self.phaseModButton.isChecked():
             self.modulationOn = True
-            self.ampModButton.setChecked(False)
-            self.modOffButton.setChecked(False)
-            self.amDepthBox.setDisabled(False)
-            self.amFreqBox.setDisabled(False)
+            self.disableModButtons(False)
             self.signalGenerator.setModulationType(False)
         else:
             self.modulationOn = False
-            self.ampModButton.setChecked(False)
-            self.modOffButton.setChecked(True)
-            self.amDepthBox.setDisabled(True)
-            self.amFreqBox.setDisabled(True)
+            self.disableModButtons(True)
             self.signalGenerator.setModulationState(False)
             
     def on_modOffButton_toggled(self):
         if self.modOffButton.isChecked():
             self.modulationOn = False
-            self.ampModButton.setChecked(False)
-            self.phaseModButton.setChecked(False)
-            self.amDepthBox.setDisabled(True)
-            self.amFreqBox.setDisabled(True)
+            self.disableModButtons(True)
             self.signalGenerator.setModulationState(False)
         else:
             self.modulationOn = True
-            self.ampModButton.setChecked(True)
-            self.phaseModButton.setChecked(False)
-            self.amDepthBox.setDisabled(False)
-            self.amFreqBox.setDisabled(False)
+            self.disableModButtons(False)
             self.signalGenerator.setModulationState(True)
 
         
@@ -333,4 +314,5 @@ if __name__ == '__main__':
     #app.setWindowIcon(QtGui.QIcon(':/icons/field_controller.ico'))
     window = MainWindow()
     window.show()
+    #app.aboutToQuit(window.killThreads())
     sys.exit(app.exec_())
