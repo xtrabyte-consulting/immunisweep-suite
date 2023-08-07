@@ -25,6 +25,8 @@ class AgilentN5181A(QObject):
         self.new_command = False
         self.write_command: str = ':OUT:STAT OFF'
         self.read_command: str = '*IDN?'
+        self.write_thread = None
+        self.runSweep = False
     
     def detect(self):
         self.ping_started = True
@@ -39,6 +41,11 @@ class AgilentN5181A(QObject):
     def stopDetection(self):
         self.ping_started = False
         self.ping_thread.join()
+
+    def stop(self):
+        self.is_running = False
+        if self.write_thread:
+            self.write_thread.join()
         
     def connect(self):
         self.is_running = True
@@ -94,11 +101,6 @@ class AgilentN5181A(QObject):
         self.write_command = f':OUTP:STAT {"ON" if on else "OFF"}'
         self.read_command = ':OUTP:STAT?'
         self.new_command = True
-        # :SWE:DWELL
-        # :LIST:TRIG:SOUR IMM
-        # :SWE:GEN: STEP
-        # :SWE:POIN <number of teps>
-        # :SWE:SPAC LIN|LOG
 
     def clearErrors(self):
         try:
@@ -109,14 +111,19 @@ class AgilentN5181A(QObject):
 
     def startFrequencySweep(self, start: int, stop: int, steps: int, dwell: int):
         self.sweepThread = threading.Thread(target=self.sweepFrequency, args=(start, stop, steps, dwell))
+        self.runSweep = True
         self.sweepThread.start()
+        
+    def stopFrequencySweep(self):
+        self.runSweep = False
+        self.sweepThread.join()
 
     def sweepFrequency(self, start, stop, steps, dwell):
-        traversal = start - stop
+        traversal = stop - start
         step = traversal / steps
         dwell *= 0.001
         current = start
-        while current <= stop:
+        while current <= stop and self.runSweep:
             self.setFrequency(current)
             current += step
             time.sleep(dwell)
