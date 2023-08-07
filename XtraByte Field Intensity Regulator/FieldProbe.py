@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class ETSLindgrenHI6006(QObject):
     fieldIntensityReceived = pyqtSignal(float, float, float, float)
-    identityReceived = pyqtSignal(str, str, str, str)
+    identityReceived = pyqtSignal(str, str, str)
     batteryReceived = pyqtSignal(int)
     temperatureReceived = pyqtSignal(float) 
     serialConnectionError = pyqtSignal(str)
@@ -17,10 +17,11 @@ class ETSLindgrenHI6006(QObject):
         self.serial = None
         self.is_running = False
         self.read_received = False
+        self.firstCommand = True
         self.command: str = None
         self.battery_level: int = 100
-        self.battery_flag: bool = True
-        self.blockSize = 34
+        self.battery_flag: bool = False
+        self.blockSize = 35
     
     def start(self):
         self.is_running = True
@@ -74,30 +75,30 @@ class ETSLindgrenHI6006(QObject):
         while self.is_running:
             if self.serial.in_waiting > 0:
                 response = self.serial.read(self.blockSize).decode().strip()
+                print(f"Probe Response{response}")
                 if response.startswith(':D'):
                     x_component = float(response[2:7])
                     y_component = float(response[7:12])
                     z_component = float(response[12:17])
                     composite = float(response[17:22])
-                    self.battery_flag = response[22] == 'F'
+                    #print(f"X: {x_component}, Y: {y_component}, Z: {z_component}, Comp: {composite}")
                     self.fieldIntensityReceived.emit(x_component, y_component, z_component, composite)
                 elif response.startswith(':I'):
-                    try:
-                        model = response[2:6]
-                        revision = response[6:16]
-                        serial_no = response[16:24]
-                        calibration = response[24:32]
-                        self.battery_flag = response[32] == 'F'
-                        print(model, revision, serial_no, calibration)
-                        self.identityReceived.emit(model, revision, serial_no, calibration)
-                    except IndexError as e:
-                        print(e)
+                    model = response[2:6]
+                    revision = response[6:16]
+                    serial_no = response[16:24]
+                    #calibration = response[24:32]
+                    #self.battery_flag = response[32] == 'F'
+                    print(model, revision, serial_no)
+                    self.identityReceived.emit(model, revision, serial_no)
                 elif response.startswith(':B'):
                     self.battery_level = int(response[2:4], 16)
                     self.battery_flag = response[4] == 'F'
+                    print(f'Batt: {self.battery_flag}')
                     self.batteryReceived.emit(self.battery_level)
                 elif response.startswith(':T'):
                     temperature = float(response[2:6])
+                    print(f'Temp: {temperature}')
                     self.temperatureReceived.emit(temperature)
                 elif response.startswith(':E'):
                     e = int(response[2])
