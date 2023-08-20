@@ -7,15 +7,15 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtGui import QPainter, QBitmap, QPolygon, QPen, QBrush, QColor
 from PyQt5.QtCore import Qt
 
+from pyqtgraph import PlotWidget, plot
+import pyqtgraph as pg
+
 from MainWindow import Ui_MainWindow
 from SignalGenerator import AgilentN5181A
 from FieldProbe import ETSLindgrenHI6006
 
 import os
 import sys
-import random
-import types
-import math
 
 try:
     # Include in try/except block if you're also targeting Mac/Linux
@@ -75,12 +75,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fieldProbe.serialConnectionError.connect(self.on_fieldProbe_serialConnectionError)
         self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
         self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
-        self.signalGenerator.instrument_detected.connect(self.on_sigGen_instrument_detected)
-        self.signalGenerator.instrument_connected.connect(self.on_sigGen_instrument_connected)
-        self.signalGenerator.current_frequency.connect(self.on_sigGen_current_frequency)
-        self.signalGenerator.current_power.connect(self.on_sigGen_current_power)
-        self.signalGenerator.error_occured.connect(self.on_sigGen_error_occured)
-        self.signalGenerator.rfOutStateReceived.connect(self.on_sigGen_rfOutStateReceived)
+        self.signalGenerator.instrumentDetected.connect(self.on_sigGen_instrumentDetected)
+        self.signalGenerator.instrumentConnected.connect(self.on_sigGen_instrumentConnected)
+        self.signalGenerator.frequencySet.connect(self.on_sigGen_frequencySet)
+        self.signalGenerator.powerSet.connect(self.on_sigGen_powerSet)
+        self.signalGenerator.error.connect(self.on_sigGen_error)
+        self.signalGenerator.rfOutSet.connect(self.on_sigGen_rfOutSet)
         self.signalGenerator.sweepFinished.connect(self.on_sigGen_sweepFinished)
         self.connectFieldProbeButton.pressed.connect(self.on_connectFieldProbeButton_pressed)
         self.connectSigGenButton.pressed.connect(self.on_connectSigGenButton_pressed)
@@ -196,13 +196,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(message)
         self.displayAlert(message)
     
-    def on_sigGen_rfOutStateReceived(self, on: bool):
+    def on_sigGen_rfOutSet(self, on: bool):
         if on:
             print('RF On')
             self.startButton.setText('Stop')
             self.rfOutOn = True
             if self.sweepOn:
-                self.signalGenerator.startFrequencySweep(self.startFrequency, self.stopFrequency, self.steps, self.stepDwell)
+                self.signalGenerator.startFrequencySweep(self.startFrequency, self.stopFrequency, self.steps, self.stepDwell, True)
                 self.sweepRunning = True
         else:
             print("RF Off")
@@ -214,7 +214,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Stop Freq Sweep
         self.pidController.clear()
     
-    def on_sigGen_instrument_detected(self, detected: bool):
+    def on_sigGen_instrumentDetected(self, detected: bool):
         if detected:
             self.signalGenerator.stopDetection()
             self.signalGenerator.connect()
@@ -224,15 +224,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.displayAlert("Signal Generator Disconnected. Please connect via LAN.")
                 self.alerted = True        
     
-    def on_sigGen_instrument_connected(self, message: str):
+    def on_sigGen_instrumentConnected(self, message: str):
         self.connectSigGenButton.setText('Connected')
         #TODO: self.connectSigGenButton.setIcon(':/icons/connected.png')
         self.sigGenLabel.setText(''.join(message.split(',')))
         
-    def on_sigGen_current_frequency(self, frequency: float):
+    def on_sigGen_frequencySet(self, frequency: float):
         self.currentOutputFrequency = frequency
     
-    def on_sigGen_current_power(self, power: float):
+    def on_sigGen_powerSet(self, power: float):
         self.currentOutputPower = power
         self.controlLoopAdjLcd.display(power)
     
@@ -240,7 +240,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweepRunning = False
         self.signalGenerator.setRFOut(False)
         
-    def on_sigGen_error_occured(self, message: str):
+    def on_sigGen_error(self, message: str):
         print(message)
         self.displayAlert(message)
     
