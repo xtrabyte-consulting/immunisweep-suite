@@ -13,6 +13,7 @@ import pyqtgraph as pg
 from MainWindow import Ui_MainWindow
 from SignalGenerator import AgilentN5181A
 from FieldProbe import ETSLindgrenHI6006
+from Plots import PowerPlot
 
 import os
 import sys
@@ -111,6 +112,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweepRunning = False
         self.setOn = True
         self.pauseButton.setText("Clear Err")
+        self.intensityPlot = PowerPlot()
+        self.topGraphicsView.setScene(self.intensityPlot)
+        self.frequencyPlot = PowerPlot(title="Frquency", labels={'left': "Frquency (dBm)", 'bottom': 'Time (sec)'})
+        self.bottomGraphicsView.setScene(self.frequencyPlot)
         self.startDeviceDetection()
         
     def startDeviceDetection(self):
@@ -231,10 +236,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_sigGen_frequencySet(self, frequency: float):
         self.currentOutputFrequency = frequency
+        self.frequencyPlot.plotData(QTime.currentTime(), frequency)
     
     def on_sigGen_powerSet(self, power: float):
         self.currentOutputPower = power
         self.controlLoopAdjLcd.display(power)
+        self.intensityPlot.plotData(QTime.currentTime(), power)
     
     def on_sigGen_sweepFinished(self):
         self.sweepRunning = False

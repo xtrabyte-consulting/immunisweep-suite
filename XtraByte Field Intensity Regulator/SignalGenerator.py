@@ -18,14 +18,37 @@ class SCPI(Enum):
     MHz = 'MHz'
     kHz = 'kHz'
     dBm = 'dBm'
+    Linear = 'LIN'
+    Exponential = 'EXP'
+    Internal = 'INT'
+    External = 'EXT'
+    AC = 'AC'
+    DC = 'DC'
     RFOut = ':OUTP:STAT'
     Identity = '*IDN'
     Frequency = ':FREQ'
     Power = ':POW'
-    AmpModState = ':AM:STAT'
-    AmpModDepth = ':AM:DEPT:LIN'
-    PhaseModState = ':PM:STAT'
-    FreqModState = ':FM:STAT'
+    AMState = ':AM:STAT'
+    AMType = ':AM:TYPE'
+    AMMode = ':AM:MODE'
+    AMDepthStep = ':AM:DEPT:STEP'
+    AMSource = ':AM:SOUR'
+    AMCoupling = ':AM:EXT:COUP'
+    AMFreq = ':AM:INT:FREQ'
+    AMFreqStep = ':AM:INT:FREQ:STEP'
+    AMLinDepth = ':AM:DEPT:LIN'
+    AMExpDepth = ':AM:DEPT:EXP'
+    FMState = ':FM:STAT'
+    FMSource = ':FM:SOUR'
+    FMCoupling = ':FM:EXT:COUP'
+    FMFreq = ':FM:INT:FREQ' 
+    FMStep = ':FM:INT:FREQ:STEP'
+    PMState = ':PM:STAT'
+    PMSource = ':PM:SOUR'
+    PMBand = ':PM:BAND|BWID'
+    PMCoupling = ':PM:EXT:COUP'
+    PMFreq = ':PM:INT:FREQ'
+    PMStep = ':PM:INT:FREQ:STEP'
     ModulationState = ':OUTP:MOD:STAT'
     OperationComplete = '*OPC?'
     Empty = ''
@@ -107,26 +130,93 @@ class AgilentN5181A(QObject):
     
     def setModulationType(self, mod):
         if mod == Modulation.AM:
-            self.commandQueue.put((SCPI.PhaseModState, f'{SCPI.PhaseModState.value} {SCPI.Off.value}'))
-            self.commandQueue.put((SCPI.FreqModState, f'{SCPI.FreqModState.value} {SCPI.Off.value}'))
-            self.commandQueue.put((SCPI.AmpModState, f'{SCPI.AmpModState.value} {SCPI.On.value}'))
+            self.commandQueue.put((SCPI.PMState, f'{SCPI.PMState.value} {SCPI.Off.value}'))
+            self.commandQueue.put((SCPI.FMState, f'{SCPI.FMState.value} {SCPI.Off.value}'))
+            self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.On.value}'))
         elif mod == Modulation.FM:
-            self.commandQueue.put((SCPI.PhaseModState, f'{SCPI.PhaseModState.value} {SCPI.Off.value}'))
-            self.commandQueue.put((SCPI.AmpModState, f'{SCPI.AmpModState.value} {SCPI.Off.value}'))
-            self.commandQueue.put((SCPI.FreqModState, f'{SCPI.FreqModState.value} {SCPI.On.value}'))
+            self.commandQueue.put((SCPI.PMState, f'{SCPI.PMState.value} {SCPI.Off.value}'))
+            self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.Off.value}'))
+            self.commandQueue.put((SCPI.FMState, f'{SCPI.FMState.value} {SCPI.On.value}'))
         elif mod == Modulation.PM:
-            self.commandQueue.put((SCPI.FreqModState, f'{SCPI.FreqModState.value} {SCPI.Off.value}'))
-            self.commandQueue.put((SCPI.AmpModState, f'{SCPI.AmpModState.value} {SCPI.Off.value}'))
-            self.commandQueue.put((SCPI.PhaseModState, f'{SCPI.PhaseModState.value} {SCPI.On.value}'))
-        
+            self.commandQueue.put((SCPI.FMState, f'{SCPI.FMState.value} {SCPI.Off.value}'))
+            self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.Off.value}'))
+            self.commandQueue.put((SCPI.PMState, f'{SCPI.PMState.value} {SCPI.On.value}'))
+    
+    # TODO: Ranges, coupling, normal/deep/high
     def setModulationState(self, on: bool):
         self.commandQueue.put((SCPI.ModulationState, f'{SCPI.ModulationState.value} {SCPI.On.value if on else SCPI.Off.value}'))
+    
+    def setAMSource(self, internal: bool):
+        self.commandQueue.put((SCPI.AMSource, f'{SCPI.AMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
+    
+    def setAMCoupling(self, dc: bool):
+        self.commandQueue.put((SCPI.AMCoupling, f'{SCPI.AMCoupling.value} {SCPI.DC.value if dc else SCPI.AC.value}'))
+     
+    def setAMType(self, linear: bool):
+        self.commandQueue.put((SCPI.AMType, f'{SCPI.AMType.value} {SCPI.Linear.value if linear else SCPI.Exponential.value}'))
+    
+    def setAMLinearDepth(self, percent: float):
+        self.commandQueue.put((SCPI.AMLinDepth, f'{SCPI.AMLinDepth.value} {str(percent)}'))
         
-    def setAmpModDepth(self, depth: float):
-        self.commandQueue.put((SCPI.AmpModDepth, f'{SCPI.AmpModDepth.value} {str(depth)}'))
+    def setAMExpDepth(self, depth: float):
+        self.commandQueue.put((SCPI.AMExpDepth, f'{SCPI.AMExpDepth.value} {str(depth)}'))
+        
+    def setAMFrequency(self, freq: float):
+        # Range: 0.1 -> 20 MHz
+        if freq > 20000:
+            freq = 20000
+        elif freq < 0.0001:
+            freq = 0.0001
+        self.commandQueue.put((SCPI.AMFreq, f'{SCPI.AMFreq.value} {str(freq)} {SCPI.kHz.value}'))
+        
+    def setAMState(self, on: bool):
+        self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.On.value if on else SCPI.Off.value}'))
+        
+    def setFMState(self, on: bool):
+        self.commandQueue.put((SCPI.FMState, f'{SCPI.FMState.value} {SCPI.On.value if on else SCPI.Off.value}'))
+    
+    def setFMSource(self, internal: bool):
+        self.commandQueue.put((SCPI.FMSource, f'{SCPI.FMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
+ 
+    def setFMFrequency(self, freq: float, unit: str = SCPI.kHz.value):
+        # Range: 0.1 Hz -> 2MHz
+        self.commandQueue.put((SCPI.FMFreq, f'{SCPI.FMFreq.value} {str(freq)} {unit}'))
+        
+    def setFMStep(self, step: float):
+        # Range: 0.5Hz - 1e6 Hz
+        self.commandQueue.put((SCPI.FMStep, f'{SCPI.FMFreq.value} {str(step)}'))
+    
+    def setFMCoupling(self, dc: bool):
+        self.commandQueue.put((SCPI.FMCoupling, f'{SCPI.FMCoupling.value} {SCPI.DC.value if dc else SCPI.AC.value}'))
+        
+    def setPMState(self, on: bool):
+        self.commandQueue.put((SCPI.PMState, f'{SCPI.PMState.value} {SCPI.On.value if on else SCPI.Off.value}'))
+    
+    def setPMSource(self, internal: bool):
+        self.commandQueue.put((SCPI.PMSource, f'{SCPI.PMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
+ 
+    def setPMFrequency(self, freq: float, unit: str = SCPI.kHz.value):
+        # Range: 0.1 Hz -> 2MHz
+        self.commandQueue.put((SCPI.PMFreq, f'{SCPI.PMFreq.value} {str(freq)} {unit}'))
+        
+    def setPMStep(self, step: float):
+        # Range: 0.5Hz - 1e6 Hz
+        self.commandQueue.put((SCPI.PMStep, f'{SCPI.PMFreq.value} {str(step)}'))
+    
+    def setPMCoupling(self, dc: bool):
+        self.commandQueue.put((SCPI.PMCoupling, f'{SCPI.PMCoupling.value} {SCPI.DC.value if dc else SCPI.AC.value}'))    
+    
+    def setPMBandwidth(self, normal: bool):
+        self.deleteLater
     
     def setRFOut(self, on: bool):
+        self.clearQueue()
         self.commandQueue.put((SCPI.RFOut, f'{SCPI.RFOut.value} {SCPI.On.value if on else SCPI.Off.value}'))
+        
+    def clearQueue(self):
+        self.clearing = True
+        while self.commandQueue.qsize() is not 0:
+            self.commandQueue.get()
 
     def clearErrors(self):
         try:
@@ -170,36 +260,39 @@ class AgilentN5181A(QObject):
     def writeSCPI(self):
         while self.is_running:
             # This will block until a command is availible
-            command = self.commandQueue.get()
-            commandType = command[0]
-            commandValue = command[1]
-            if commandType == SCPI.Exit:
-                print('Exiting write thread')
-                break
-                    
-            self.instrument.write(commandValue)
-            complete = self.instrument.query(SCPI.OperationComplete.value)
-            
-            state = self.instrument.query(f'{commandType.value}?')
-            
-            if commandType == SCPI.Identity: 
-                self.instrumentConnected.emit(state)
-            elif commandType == SCPI.RFOut:
-                self.rfOutSet.emit(state == '1')
-            elif commandType == SCPI.Power:
-                self.powerSet.emit(float(state))
-            elif commandType == SCPI.Frequency:
-                self.frequencySet.emit(float(state))
-            elif commandType == SCPI.ModulationState:
-                self.modStateSet.emit(state == '1')
-            elif commandType == SCPI.AmpModState:
-                self.modTypeSet(Modulation.AM.value, state == '1')
-            elif commandType == SCPI.AmpModDepth:
-                self.amDepthSet(float(state))
-            elif commandType == SCPI.FreqModState:
-                self.modTypeSet(Modulation.FM.value, state == '1')
-            elif commandType == SCPI.PhaseModState:
-                self.modTypeSet(Modulation.PM.value, state == '1')
+            if self.clearing:
+                self.commandQueue.join()
+            else:
+                command = self.commandQueue.get()
+                commandType = command[0]
+                commandValue = command[1]
+                if commandType == SCPI.Exit:
+                    print('Exiting write thread')
+                    break
+                        
+                self.instrument.write(commandValue)
+                complete = self.instrument.query(SCPI.OperationComplete.value)
+                
+                state = self.instrument.query(f'{commandType.value}?')
+                
+                if commandType == SCPI.Identity: 
+                    self.instrumentConnected.emit(state)
+                elif commandType == SCPI.RFOut:
+                    self.rfOutSet.emit(state == '1')
+                elif commandType == SCPI.Power:
+                    self.powerSet.emit(float(state))
+                elif commandType == SCPI.Frequency:
+                    self.frequencySet.emit(float(state))
+                elif commandType == SCPI.ModulationState:
+                    self.modStateSet.emit(state == '1')
+                elif commandType == SCPI.AmpModState:
+                    self.modTypeSet(Modulation.AM.value, state == '1')
+                elif commandType == SCPI.AmpModDepth:
+                    self.amDepthSet(float(state))
+                elif commandType == SCPI.FreqModState:
+                    self.modTypeSet(Modulation.FM.value, state == '1')
+                elif commandType == SCPI.PhaseModState:
+                    self.modTypeSet(Modulation.PM.value, state == '1')
                 
     def check_static_ip(self):
         while self.ping_started:

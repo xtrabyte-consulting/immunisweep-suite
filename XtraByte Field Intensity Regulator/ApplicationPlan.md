@@ -76,3 +76,12 @@ SetPower:
 Start:
 Stop:
 AgilentSCPI: socket, socketscpi, visa
+
+
+Only strat discovery threads once UI is setup.
+
+Missing: X, Y, Z field inesities:, Probe Temp, Charge
+Unit Pictures
+PM, AM FM, control abilities;
+Linear, Exp Sweep
+Internal, External Mod Coupling/Source

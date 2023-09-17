@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>827</width>
-    <height>627</height>
+    <width>1100</width>
+    <height>788</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,38 +20,218 @@
       <x>13</x>
       <y>0</y>
       <width>1062</width>
-      <height>571</height>
+      <height>766</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
      <property name="leftMargin">
       <number>0</number>
      </property>
+     <item row="0" column="0">
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="4" column="0">
+        <widget class="QLabel" name="desiredIntensityLabel">
+         <property name="text">
+          <string>Target Mean Field Strength (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Y-Component Magnitude (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="currentFieldIntesityLabel">
+         <property name="text">
+          <string>Measured Mean Field Strength (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QLCDNumber" name="lcdNumber_3"/>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLCDNumber" name="fieldIntensityLcd">
+         <property name="smallDecimalPoint">
+          <bool>false</bool>
+         </property>
+         <property name="digitCount">
+          <number>5</number>
+         </property>
+         <property name="value" stdset="0">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="fieldProbeLabel">
+         <property name="text">
+          <string>Field Probe </string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QLCDNumber" name="lcdNumber_2"/>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLCDNumber" name="controlLoopAdjLcd">
+         <property name="smallDecimalPoint">
+          <bool>false</bool>
+         </property>
+         <property name="digitCount">
+          <number>5</number>
+         </property>
+         <property name="value" stdset="0">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="intValue" stdset="0">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="sigGenLabel">
+         <property name="text">
+          <string>Signal Generator </string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QLCDNumber" name="lcdNumber"/>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="connectFieldProbeButton">
+         <property name="minimumSize">
+          <size>
+           <width>175</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Current Output Power (dBm)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="connectSigGenButton">
+         <property name="minimumSize">
+          <size>
+           <width>175</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>E-Field Intensity Control</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="setFieldIntensityBox"/>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>X-Component Magnitude (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Z-Component Magnitude (V/m):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Temperature (C):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="currentOutputLabel">
+           <property name="text">
+            <string>Charge Level (%):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="1">
+      <widget class="QGraphicsView" name="topGraphicsView"/>
+     </item>
      <item row="1" column="0">
       <layout class="QGridLayout" name="gridLayout_3">
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="freqStopBox">
+         <property name="minimum">
+          <double>0.250000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>6000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>6000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <property name="sizeConstraint">
-          <enum>QLayout::SetDefaultConstraint</enum>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <widget class="QRadioButton" name="linearSweepButton">
+          <widget class="QRadioButton" name="sweepOffButton">
            <property name="text">
-            <string>Lin</string>
+            <string>Off</string>
            </property>
-           <property name="checked">
+           <property name="checkable">
             <bool>true</bool>
            </property>
           </widget>
@@ -67,147 +247,18 @@
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="sweepOffButton">
+          <widget class="QRadioButton" name="linearSweepButton">
            <property name="text">
-            <string>Off</string>
+            <string>Lin</string>
            </property>
-           <property name="checkable">
+           <property name="checked">
             <bool>true</bool>
            </property>
           </widget>
          </item>
         </layout>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="stopFreqLabel">
-         <property name="text">
-          <string>Stop Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="stepDwellBox">
-         <property name="minimum">
-          <double>1.050000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>2000.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>1.050000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QPushButton" name="pauseButton">
-         <property name="text">
-          <string>Pause</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QPushButton" name="startButton">
-         <property name="text">
-          <string>Start</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Frequency Sweep:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="freqStopBox">
-         <property name="minimum">
-          <double>0.250000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>6000.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>6000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="stepDwellLabel">
-         <property name="text">
-          <string>Step Dwell (ms):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QDoubleSpinBox" name="freqStartBox">
-         <property name="minimum">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>6000.000000000000000</double>
-         </property>
-         <property name="stepType">
-          <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
-         </property>
-         <property name="value">
-          <double>0.100000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QDoubleSpinBox" name="amFreqBox">
-         <property name="minimum">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>5.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>1.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QSpinBox" name="stepCountBox">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>100000</number>
-         </property>
-         <property name="value">
-          <number>1</number>
-         </property>
-         <property name="displayIntegerBase">
-          <number>10</number>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="amDepthBox"/>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="setFreqStartLabel">
-         <property name="text">
-          <string>Start Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="modulationLabel">
-         <property name="text">
-          <string>Modulation:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
+       <item row="10" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="spacing">
           <number>0</number>
@@ -241,128 +292,230 @@
          </item>
         </layout>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="stepCountLabel">
+       <item row="9" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QRadioButton" name="radioButton_4">
+           <property name="text">
+            <string>AC</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButton_3">
+           <property name="text">
+            <string>DC</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>Step Count:</string>
+          <string>Coupling</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="stepDwellBox">
+         <property name="minimum">
+          <double>1.050000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>2000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.050000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
         <widget class="QLabel" name="depthLabel">
          <property name="text">
           <string>Depth (%):</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="13" column="0">
+        <widget class="QPushButton" name="startButton">
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Source</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
+        <widget class="QPushButton" name="pauseButton">
+         <property name="text">
+          <string>Pause</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Start Frequency (MHz):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QRadioButton" name="radioButton_2">
+           <property name="text">
+            <string>Internal</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButton">
+           <property name="text">
+            <string>External</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="12" column="0">
         <widget class="QLabel" name="modFreqLabel">
          <property name="text">
           <string>Frequency (kHz):</string>
          </property>
         </widget>
        </item>
-      </layout>
-     </item>
-     <item row="0" column="0">
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="setFieldIntensityBox"/>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="currentFieldIntesityLabel">
-         <property name="text">
-          <string>Current Field Intensity (V/m):</string>
+       <item row="12" column="1">
+        <widget class="QDoubleSpinBox" name="amFreqBox">
+         <property name="minimum">
+          <double>0.100000000000000</double>
          </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="fieldProbeLabel">
-         <property name="text">
-          <string>Field Probe </string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLCDNumber" name="fieldIntensityLcd">
-         <property name="smallDecimalPoint">
-          <bool>false</bool>
-         </property>
-         <property name="digitCount">
-          <number>5</number>
-         </property>
-         <property name="value" stdset="0">
+         <property name="maximum">
           <double>5.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="stepCountBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="value">
+          <number>1</number>
+         </property>
+         <property name="displayIntegerBase">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="freqStartBox">
+         <property name="minimum">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>6000.000000000000000</double>
+         </property>
+         <property name="stepType">
+          <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+         </property>
+         <property name="value">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="stepCountLabel">
+         <property name="text">
+          <string>Step Cou</string>
          </property>
         </widget>
        </item>
        <item row="0" column="0">
-        <widget class="QLabel" name="sigGenLabel">
+        <widget class="QLabel" name="label_10">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
-          <string>Signal Generator </string>
+          <string>Frequency Control</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="connectSigGenButton">
-         <property name="minimumSize">
-          <size>
-           <width>175</width>
-           <height>0</height>
-          </size>
-         </property>
+       <item row="10" column="0">
+        <widget class="QLabel" name="modulationLabel">
          <property name="text">
-          <string>Connect</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLCDNumber" name="controlLoopAdjLcd">
-         <property name="smallDecimalPoint">
-          <bool>false</bool>
-         </property>
-         <property name="digitCount">
-          <number>5</number>
-         </property>
-         <property name="value" stdset="0">
-          <double>0.000000000000000</double>
-         </property>
-         <property name="intValue" stdset="0">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="connectFieldProbeButton">
-         <property name="minimumSize">
-          <size>
-           <width>175</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Connect</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="desiredIntensityLabel">
-         <property name="text">
-          <string>Desired Field Intensity (V/m):</string>
+          <string>Modulation Type</string>
          </property>
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="currentOutputLabel">
+        <widget class="QLabel" name="stepDwellLabel">
          <property name="text">
-          <string>Current Output Power (dBm)</string>
+          <string>Step Dwell (ms):</string>
          </property>
         </widget>
        </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="stopFreqLabel">
+         <property name="text">
+          <string>Stop Frequency (MHz):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="setFreqStartLabel">
+         <property name="text">
+          <string>Sweep Setting</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QDoubleSpinBox" name="amDepthBox"/>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Modulation Control</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>Current Frequency (MHz)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLCDNumber" name="lcdNumber_4"/>
+       </item>
       </layout>
-     </item>
-     <item row="0" column="1">
-      <widget class="QGraphicsView" name="topGraphicsView"/>
      </item>
      <item row="1" column="1">
       <widget class="QGraphicsView" name="bottomGraphicsView"/>
@@ -375,7 +528,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>827</width>
+     <width>1100</width>
      <height>24</height>
     </rect>
    </property>
