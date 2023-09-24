@@ -2,73 +2,96 @@ import serial
 from serial import SerialException, SerialTimeoutException
 import threading
 import queue
-import time
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from PyQt5.QtCore import QObject, pyqtSignal
 
     
 class SerialCommand(ABC):
-    def __init__(self, command: bytes, blocksize: int) -> None:
+    
+    ERRORS = [
+        'Unknown Error',
+        'Communication Error',
+        'Buffer Full Error',
+        'Invalid Command',
+        'Invalid Parameter',
+        'Hardware Error',
+        'Parity Error',
+        'Probe Off',
+        'Invalid Command',
+        'Battery Fail'
+    ]
+    
+    def __init__(self, command: bytes, blocksize: int, signal: int) -> None:
         self.command = command
         self.blocksize = blocksize
+        self.signal = signal
+    
+    def checkForError(self, response: bytes) -> tuple[bool, str]:
+        message = response.decode().strip().strip(':')
+        if message.startswith('E'):
+            self.signal = 6
+            return True, self.ERRORS[message[1]]
+        if message.endswith('F'):
+            self.signal = 6
+            return True, self.ERRORS[9]
+        return False, message
     
     @abstractmethod
-    def parse(self, response: bytes) -> None:
-        pass    
+    def parse(self, response: str) -> None:
+        pass
+            
  
 class TemperatureCommand(SerialCommand):
     def __init__(self) -> None:
-        super().__init__(command=b'TF', blocksize=8)
+        super().__init__(command=b'TF', blocksize=8, signal=4)
         self.temperature = 0.0
     
-    def parse(self, response: bytes) -> tuple[int, float]:
-        self.temperature = float(response.decode().strip().strip(':T'))
+    def parse(self, response: str) -> float:
+        self.temperature = float(response.strip('T'))
         print(f'Temp: {self.temperature}')
-        return 4, self.temperature
-        self.temperatureReceived.emit(self.temperature)
+        return self.temperature
 
 class BatteryCommand(SerialCommand):
     def __init__(self) -> None:
-        super().__init__(command=b'BP', blocksize=5)
+        super().__init__(command=b'BP', blocksize=5, signal=3)
         self.percentage = 100
     
-    def parse(self, response: bytes) -> tuple[int, int]:
-        self.percentage = int(response.decode().strip(':BNF').strip())
+    def parse(self, response: str) -> int:
+        self.percentage = int(response.strip('BN'))
         print(f'Battery: {self.percentage}')
-        return 3, self.percentage
+        return self.percentage
     
 class IdentityCommand(SerialCommand):
     def __init__(self) -> None:
-        super().__init__(command=b'I', blocksize=34)
+        super().__init__(command=b'I', blocksize=34, signal=2)
         self.model: str = 'HI-6006'
         self.firmware: str
         self.serialNo: str
         self.calibrationDate: str
         
-    def parse(self, response: bytes) -> tuple[int, str, str, str, str]:
-        response_str = response.decode().strip()
-        self.model = response_str[2:6]
-        self.revision = response_str[6:16]
-        self.serial_no = response_str[16:24]
-        self.calibration = response_str[24:32]
-        return 2, self.model, self.revision, self.serial_no, self.calibration
+    def parse(self, response: str) -> tuple[str, str, str, str]:
+        response_str = response.strip('I')
+        self.model = f'HI-{response_str[0:4]}'
+        self.revision = response_str[4:14]
+        self.serial_no = response_str[14:22]
+        self.calibration = response_str[22:30]
+        return self.model, self.revision, self.serial_no, self.calibration
     
 class CompositeDataCommand(SerialCommand):
     def __init__(self) -> None:
-        super().__init__(command=b'D5', blocksize=24)
+        super().__init__(command=b'D5', blocksize=24, signal=1)
         self.composite = 0.0
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
         
-    def parse(self, response: bytes) -> tuple[int, int, int, int, int]:
-        response_str = response.decode().strip(':DNF')
+    def parse(self, response: str) -> tuple[int, int, int, int]:
+        response_str = response.strip(':DN')
         self.x = float(response_str[0:5])
         self.y = float(response_str[5:10])
         self.x = float(response_str[10:15])
         self.composite = float(response_str[15:20])
-        return 1, self.x, self.y, self.z, self.composite
+        return self.x, self.y, self.z, self.composite
 
 class ETSLindgrenHI6006(QObject):
     fieldIntensityReceived = pyqtSignal(float, float, float, float)
@@ -77,8 +100,7 @@ class ETSLindgrenHI6006(QObject):
     temperatureReceived = pyqtSignal(float) 
     serialConnectionError = pyqtSignal(str)
     fieldProbeError = pyqtSignal(str)
-    SignalToCommandMap = dict
-    {
+    signalToCommandMap = {
         1: fieldIntensityReceived,
         2: identityReceived,
         3: batteryReceived,
@@ -92,14 +114,12 @@ class ETSLindgrenHI6006(QObject):
         self.serial_port = serial_port
         self.serial = None
         self.is_running = False
-        self.read_received = False
-        self.firstCommand = True
-        self.command: str = None
-        self.battery_level: int = 100
-        self.battery_flag: bool = False
-        self.blockSize = 35
-        self.commandQueue = queue.Queue
-        self.probeStatusInterval = 10
+        self.battery_level = 100
+        self.battery_fail = False
+        self.command_queue = queue.Queue
+        self.info_interval = 10
+        self.stop_probe_event = threading.Event()
+        self.stop_info_update = threading.Event()
     
     def start(self):
         self.is_running = True
@@ -112,118 +132,55 @@ class ETSLindgrenHI6006(QObject):
             self.is_running = False
             self.serialConnectionError.emit(str(e))
             print(str(e))
-        self.read_thread = threading.Thread(target=self.readSerial)
-        self.write_thread = threading.Thread(target=self.writeSerial)
-        self.read_thread.start()
-        self.write_thread.start()
-        self.commandInit()
+        self.probe_thread = threading.Thread(target=self.readWriteProbe)
+        self.probe_thread.start()
+        self.initiaizeProbe()
         
     def stop(self):
         self.is_running = False
-        self.write_thread.join()
-        self.read_thread.join()
+        self.stop_probe_event.set()
+        self.probe_thread.join()
         if self.serial and self.serial.is_open:
             self.serial.close()
         
     def initiaizeProbe(self):
-        self.commandQueue.put(IdentityCommand())
+        self.command_queue.put(IdentityCommand())
         
     def beginBatTempUpdates(self):
         self.tempBatThread = threading.Thread(target=self.updateProbeStatus)
         self.tempBatThread.start()
         
+    def endBatTempUpdates(self):
+        self.stop_info_update.set()
+        self.tempBatThread.join() 
+        
     def setUpdateInterval(self, interval: int):
-        self.probeStatusInterval = interval
+        self.probeStatusInterval = interval if interval > 5 else 5
         
     def updateProbeStatus(self):
-        while self.probeStatusInterval > 0:
-            self.commandQueue.put(BatteryCommand())
-            self.commandQueue.put(TemperatureCommand())
-            time.sleep(self.probeStatusInterval)
-        
-    def commandInit(self):
-        self.blockSize = 34
-        self.command = b'I'
-        self.read_received = True
+        while not self.stop_info_update.is_set():
+            self.command_queue.put(BatteryCommand())
+            self.command_queue.put(TemperatureCommand())
+            self.stop_info_update.wait(self.probeStatusInterval)
         
     def getBatteryPercentage(self):
-        
-        self.command = b'BP'
-        self.read_received = True
+        self.command_queue.put(BatteryCommand())
         
     def getTemperature(self):
-        self.command = b'TF'
-        self.read_received = True
+        self.command_queue.put(TemperatureCommand())
     
-    def getEField(self):
-        self.blockSize = 24
-        self.command = b'D5'
-        self.read_received = True
-
-    def writeSerial(self):
-        while self.is_running:
-            if self.read_received:
-                self.serial.write(self.command)
-                self.read_received = False
+    def getFieldStrengthMeasurement(self):
+        self.command_queue.put(CompositeDataCommand())
     
-    def probeProbe(self):
-        while self.is_running:
-            command: ProbeCommand = self.commandQueue.get()
-            self.serial.write(command.word)
-            response = self.serial.read(command.blocksize).decode().strip().strip()
-    
-    def readSerial(self):
-        while self.is_running:
-            if self.serial.in_waiting > 0:
-                response = self.serial.read(self.blockSize).decode().strip()
-                print(f"Probe Response{response}")
-                if response.startswith(':D'):
-                    x_component = float(response[2:7])
-                    y_component = float(response[7:12])
-                    z_component = float(response[12:17])
-                    composite = float(response[17:22])
-                    #print(f"X: {x_component}, Y: {y_component}, Z: {z_component}, Comp: {composite}")
-                    self.fieldIntensityReceived.emit(x_component, y_component, z_component, composite)
-                elif response.startswith(':I'):
-                    model = response[2:6]
-                    revision = response[6:16]
-                    serial_no = response[16:24]
-                    #calibration = response[24:32]
-                    #self.battery_flag = response[32] == 'F'
-                    print(model, revision, serial_no)
-                    self.identityReceived.emit(model, revision, serial_no)
-                elif response.startswith(':B'):
-                    self.battery_level = int(response[2:4], 16)
-                    self.battery_flag = response[4] == 'F'
-                    print(f'Batt: {self.battery_flag}')
-                    self.batteryReceived.emit(self.battery_level)
-                elif response.startswith(':T'):
-                    temperature = float(response[2:6])
-                    print(f'Temp: {temperature}')
-                    self.temperatureReceived.emit(temperature)
-                elif response.startswith(':E'):
-                    e = int(response[2])
-                    if e == 1:
-                        s = "Communication Error"
-                    elif e == 2:
-                        s = "Buffer Full Error"
-                    elif e == 3:
-                        s = "Invalid Command"
-                    elif e == 4:
-                        s = "Invalid Parameter"
-                    elif e == 5:
-                        s = "Hardware Error"
-                    elif e == 6:
-                        s = "Parity Error"
-                    elif e == 7:
-                        s = "Probe Off"
-                    elif e == 9:
-                        s = "Invalid Command"
-                    else:
-                        s = "Unknown Error"
-                    self.fieldProbeError.emit(s)
-                self.read_received = True
-                if self.battery_flag:
-                    self.fieldProbeError.emit("Battery below safe operting level.")
+    def readWriteProbe(self):
+        while not self.stop_probe_event.is_set():
+            serial_command: SerialCommand = self.command_queue.get()
+            self.serial.write(serial_command.command)
+            response = self.serial.read(serial_command.blocksize)
+            error, message = serial_command.checkForError(response)
+            if error:
+                self.fieldProbeError.emit(message)
+            else:
+                self.signalToCommandMap.get(serial_command.signal).emit(serial_command.parse(message))
                     
                     
