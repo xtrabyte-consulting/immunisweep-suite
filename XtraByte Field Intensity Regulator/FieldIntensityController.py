@@ -73,6 +73,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fieldProbe = ETSLindgrenHI6006('COM5')
         self.fieldProbe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.fieldProbe.identityReceived.connect(self.on_fieldProbe_identityReceived)
+        self.fieldProbe.batteryReceived.connect(self.on_fieldProbe_batteryReceived)
+        self.fieldProbe.temperatureReceived.connect(self.on_fieldProbe_temperatureReceived)
         self.fieldProbe.serialConnectionError.connect(self.on_fieldProbe_serialConnectionError)
         self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
         self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
@@ -205,22 +207,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.alert.exec()
     
     def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str):
-        self.connectFieldProbeButton.setText('Connected')
+        self.pushButton_detectFieldProbe.hide()
         #TODO: self.connectFieldProbeButton.setIcon(':/icons/connected.png')
         self.fieldProbeLabel.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial)
         self.fieldProbe.getEField()
       
-    def on_fieldProbe_fieldIntensityReceived(self, x, y, z, intensity: float):
-        self.measuredFieldIntensity = intensity
-        self.fieldIntensityLcd.display(intensity)
+    def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
+        self.measuredFieldIntensity = composite
+        self.updateFieldStrengthUI(x, y, z, composite)
         if self.rfOutOn:
-            output = self.pidController.calculate(self.desiredFieldIntensity, intensity)
-            print("PID Out: " + str(output))
+            output = self.pidController.calculate(self.desiredFieldIntensity, composite)
+            #rint("PID Out: " + str(output))
             if output > 14:
                 output = 14
             if output < -110:
                 output = -110
             self.signalGenerator.setPower(output)
+    
+    def updateFieldStrengthUI(self, x: float, y: float, z: float, composite: float):
+        self.lcdNumber_avgStrength.display(composite)
+        self.lcdNumber_xMag.display(x)
+        self.lcdNumber_yMag.display(y)
+        self.lcdNumber_zMag.display(z)
+        # TODO: Plot
+        
         
     def on_fieldProbe_fieldProbeError(self, message: str):
         print(f"Probe Error: {message}")
