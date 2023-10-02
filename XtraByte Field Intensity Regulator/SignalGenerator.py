@@ -18,6 +18,9 @@ class SCPI(Enum):
     MHz = 'MHz'
     kHz = 'kHz'
     dBm = 'dBm'
+    Normal = 'NORM'
+    Deep = 'DEEP'
+    High = 'HIGH'
     Linear = 'LIN'
     Exponential = 'EXP'
     Internal = 'INT'
@@ -58,11 +61,17 @@ class AgilentN5181A(QObject):
     instrumentConnected = pyqtSignal(str)
     instrumentDetected = pyqtSignal(bool)
     error = pyqtSignal(str)
-    modTypeSet = pyqtSignal(int, bool)
+    modModeSet = pyqtSignal(int, bool)
     modStateSet = pyqtSignal(bool)
+    modSourceSet = pyqtSignal(bool)
+    modSubStateSet = pyqtSignal(int, bool)
+    modSourceSet = pyqtSignal(int, bool)
+    modFreqSet = pyqtSignal(int, float)
+    modCouplingSet = pyqtSignal(int, bool)
+    amTypeSet = pyqtSignal(bool)
+    amDepthSet = pyqtSignal(float)
     frequencySet = pyqtSignal(float)
     powerSet = pyqtSignal(float)
-    amDepthSet = pyqtSignal(float)
     rfOutSet = pyqtSignal(bool)
     sweepFinished = pyqtSignal()
     
@@ -148,6 +157,9 @@ class AgilentN5181A(QObject):
     
     def setAMSource(self, internal: bool):
         self.commandQueue.put((SCPI.AMSource, f'{SCPI.AMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
+        
+    def setAMMode(self, normal: bool):
+        self.commandQueue.put((SCPI.AMSource, f'{SCPI.AMMode.value} {SCPI.Normal.value if normal else SCPI.Deep.value}'))
     
     def setAMCoupling(self, dc: bool):
         self.commandQueue.put((SCPI.AMCoupling, f'{SCPI.AMCoupling.value} {SCPI.DC.value if dc else SCPI.AC.value}'))
@@ -207,7 +219,7 @@ class AgilentN5181A(QObject):
         self.commandQueue.put((SCPI.PMCoupling, f'{SCPI.PMCoupling.value} {SCPI.DC.value if dc else SCPI.AC.value}'))    
     
     def setPMBandwidth(self, normal: bool):
-        self.deleteLater
+        self.commandQueue.put((SCPI.PMBand, f'{SCPI.PMBand.value} {SCPI.Normal.value if normal else SCPI.High.value}'))
     
     def setRFOut(self, on: bool):
         self.clearQueue()
@@ -272,8 +284,8 @@ class AgilentN5181A(QObject):
                         
                 self.instrument.write(commandValue)
                 complete = self.instrument.query(SCPI.OperationComplete.value)
-                
-                state = self.instrument.query(f'{commandType.value}?')
+                #if complete:
+                state = self.instrument.query(f'{commandValue}?')
                 
                 if commandType == SCPI.Identity: 
                     self.instrumentConnected.emit(state)
@@ -285,14 +297,41 @@ class AgilentN5181A(QObject):
                     self.frequencySet.emit(float(state))
                 elif commandType == SCPI.ModulationState:
                     self.modStateSet.emit(state == '1')
-                elif commandType == SCPI.AmpModState:
-                    self.modTypeSet(Modulation.AM.value, state == '1')
-                elif commandType == SCPI.AmpModDepth:
-                    self.amDepthSet(float(state))
-                elif commandType == SCPI.FreqModState:
-                    self.modTypeSet(Modulation.FM.value, state == '1')
-                elif commandType == SCPI.PhaseModState:
-                    self.modTypeSet(Modulation.PM.value, state == '1')
+                elif commandType == SCPI.AMState:
+                    self.modSubStateSet.emit(Modulation.AM.value, state == '1')
+                elif commandType == SCPI.AMType:
+                    self.amTypeSet.emit(SCPI.Linear.value == state)
+                elif commandType == SCPI.AMMode:
+                    self.modModeSet.emit(Modulation.AM.value, SCPI.Normal.value == state)
+                elif commandType == SCPI.AMSource:
+                    self.modSourceSet.emit(Modulation.AM.value, SCPI.Internal.value == state)
+                elif commandType == SCPI.AMLinDepth:
+                    self.amDepthSet.emit(float(state))
+                elif commandType == SCPI.AMExpDepth:
+                    self.amDepthSet.emit(float(state))
+                elif commandType == SCPI.AMCoupling:
+                    self.modCouplingSet.emit(Modulation.AM.value, state == SCPI.AC.value)
+                elif commandType == SCPI.AMFreq:
+                    self.modFreqSet.emit(Modulation.AM.value, float(state))
+                elif commandType == SCPI.FMState:
+                    self.modSubStateSet.emit(Modulation.FM.value, state == '1')
+                elif commandType == SCPI.FMSource:
+                    self.modSourceSet.emit(Modulation.FM.value, SCPI.Internal.value == state)
+                elif commandType == SCPI.FMCoupling:
+                    self.modCouplingSet(Modulation.FM.value, state == SCPI.AC.value)
+                elif commandType == SCPI.FMFreq:
+                    self.modFreqSet.emit(Modulation.FM.value, float(state))
+                elif commandType == SCPI.PMState:
+                    self.modSubStateSet.emit(Modulation.PM.value, state == '1')
+                elif commandType == SCPI.PMBand:
+                    self.modModeSet.emit(Modulation.PM.value, SCPI.Normal.value == state)
+                elif commandType == SCPI.PMSource:
+                    self.modSourceSet.emit(Modulation.PM.value, SCPI.Internal.value == state)
+                elif commandType == SCPI.PMCoupling:
+                    self.modCouplingSet.emit(Modulation.PM.value, SCPI.AC.value == state)
+                elif commandType == SCPI.PMFreq:
+                    self.modFreqSet.emit(Modulation.PM.value, float(state))
+    
                 
     def check_static_ip(self):
         while self.ping_started:
@@ -301,15 +340,15 @@ class AgilentN5181A(QObject):
                     response_time = ping3.ping(self.ip_address, timeout = 0.5)
                     if response_time is not None and response_time:
                         if response_time:
-                            self.instrument_detected.emit(True)
+                            self.instrumentDetected.emit(True)
                             self.connected = True
                     else:
                         if (self.count == 0):
-                            self.instrument_detected.emit(False)
+                            self.instrumentDetected.emit(False)
                         else:
                             self.count -= 1
                 except Exception as e:
                     if (self.count == 0):
-                            self.error_occured.emit(f'Network error occurred: {str(e)}')
+                            self.error.emit(f'Network error occurred: {str(e)}')
                     else:
                         self.count -= 1
