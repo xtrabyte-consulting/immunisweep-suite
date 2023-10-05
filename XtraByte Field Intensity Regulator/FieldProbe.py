@@ -100,14 +100,6 @@ class ETSLindgrenHI6006(QObject):
     temperatureReceived = pyqtSignal(float) 
     serialConnectionError = pyqtSignal(str)
     fieldProbeError = pyqtSignal(str)
-    signalToCommandMap = {
-        1: fieldIntensityReceived,
-        2: identityReceived,
-        3: batteryReceived,
-        4: temperatureReceived,
-        5: serialConnectionError,
-        6: fieldProbeError
-    }
     
     def __init__(self, serial_port: str = 'COM5'):
         super().__init__()
@@ -120,6 +112,18 @@ class ETSLindgrenHI6006(QObject):
         self.info_interval = 10
         self.stop_probe_event = threading.Event()
         self.stop_info_update = threading.Event()
+    
+    def commandToSignal(self, command: SerialCommand) -> pyqtSignal:
+        if type(command) == IdentityCommand:
+            return self.identityReceived
+        elif type(command) == BatteryCommand:
+            return self.batteryReceived
+        elif type(command) == TemperatureCommand:
+            return self.temperatureReceived
+        elif type(command) == CompositeDataCommand:
+            return self.fieldIntensityReceived
+        else:
+            return self.fieldProbeError
     
     def start(self):
         self.is_running = True
@@ -181,6 +185,6 @@ class ETSLindgrenHI6006(QObject):
             if error:
                 self.fieldProbeError.emit(message)
             else:
-                self.signalToCommandMap.get(serial_command.signal).emit(serial_command.parse(message))
+                self.commandToSignal(serial_command).emit(serial_command.parse(message))
                     
                     

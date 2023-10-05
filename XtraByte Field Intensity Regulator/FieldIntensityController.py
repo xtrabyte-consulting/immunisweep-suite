@@ -230,8 +230,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lcdNumber_yMag.display(y)
         self.lcdNumber_zMag.display(z)
         # TODO: Plot
+    
+    def on_fieldProbe_batteryReceived(self, level: int):
+        self.label_chargeLevel.setText(str(level))
         
-        
+    def on_fieldProbe_temperatureReceived(self, temp: float):
+        self.label_temperature.setText(str(temp))
+    
     def on_fieldProbe_fieldProbeError(self, message: str):
         print(f"Probe Error: {message}")
         self.displayAlert(message)
