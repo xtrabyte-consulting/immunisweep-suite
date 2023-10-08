@@ -53,16 +53,19 @@
        <item row="23" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_modulationModes">
          <item>
-          <widget class="QRadioButton" name="radioButton_deepHighMode">
+          <widget class="QRadioButton" name="radioButton_basicMode">
            <property name="text">
             <string>Normal</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButton_basicMode">
+          <widget class="QRadioButton" name="radioButton_deepHighMode">
            <property name="text">
-            <string>Deep/High</string>
+            <string>Deep</string>
            </property>
           </widget>
          </item>
@@ -100,6 +103,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_rfOff">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -120,6 +126,18 @@
            </property>
            <property name="text">
             <string>RF OFF</string>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -191,6 +209,9 @@
            <property name="text">
             <string>AM</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -199,7 +220,7 @@
             <string>FM</string>
            </property>
            <property name="checked">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -233,6 +254,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_pauseSweep">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Pause Sweep</string>
            </property>
@@ -297,7 +321,7 @@
            </property>
            <item>
             <property name="text">
-             <string>Rad</string>
+             <string>%</string>
             </property>
            </item>
            <item>
@@ -308,6 +332,16 @@
            <item>
             <property name="text">
              <string>Deg</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>dBm</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Rad</string>
             </property>
            </item>
           </widget>
@@ -354,7 +388,7 @@
        <item row="6" column="0">
         <widget class="QLabel" name="label_desiredFieldTitle">
          <property name="text">
-          <string>Target Mean Field Strength</string>
+          <string>Target RMS Field Strength</string>
          </property>
         </widget>
        </item>
@@ -437,6 +471,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout_externalCoupling">
          <item>
           <widget class="QRadioButton" name="radioButton_acCoupling">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>AC Only</string>
            </property>
@@ -444,8 +481,11 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_acdcCoupling">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
-            <string>DC</string>
+            <string>AC and DC</string>
            </property>
           </widget>
          </item>
@@ -618,23 +658,26 @@
        <item row="24" column="0">
         <widget class="QLabel" name="label_amDepthFPMDev">
          <property name="text">
-          <string>Peak Depth/Dev:</string>
+          <string>Peak Depth:</string>
          </property>
         </widget>
        </item>
        <item row="26" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <widget class="QPushButton" name="pushButton_modulationOff">
+          <widget class="QPushButton" name="pushButton_modulationOn">
            <property name="text">
-            <string>Modulation Off</string>
+            <string>Modulation On</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_modulationOn">
+          <widget class="QPushButton" name="pushButton_modulationOff">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
-            <string>Modulation On</string>
+            <string>Modulation Off</string>
            </property>
           </widget>
          </item>
@@ -887,7 +930,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLCDNumber" name="lcdNumber_xMagg"/>
+          <widget class="QLCDNumber" name="lcdNumber_xMag"/>
          </item>
          <item>
           <widget class="QLabel" name="label_xMagUnit">

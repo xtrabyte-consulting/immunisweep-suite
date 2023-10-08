@@ -134,8 +134,8 @@ class AgilentN5181A(QObject):
             suffix = SCPI.kHz.value
         self.commandQueue.put((SCPI.Frequency, f'{SCPI.Frequency.value} {str(freq)} {suffix}'))
         
-    def setPower(self, pow: int):
-        self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(pow)} {SCPI.dBm.value}'))
+    def setPower(self, pow: float):
+        self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
     def setModulationType(self, mod):
         if mod == Modulation.AM:
