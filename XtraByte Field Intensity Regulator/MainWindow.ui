@@ -635,7 +635,7 @@
            </item>
            <item>
             <property name="text">
-             <string>s</string>
+             <string>sec</string>
             </property>
            </item>
           </widget>

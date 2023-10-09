@@ -12,11 +12,25 @@ class Modulation(Enum):
     PM = 3
     OFF = 0
     
+class Sweep(Enum):
+    OFF = 0
+    LINEAR = 1
+    EXPONENTIAL = 2
+    
+class Frequency(Enum):
+    Hz = 'Hz'
+    kHz = 'kHz'
+    MHz = 'MHz'
+    GHz = 'GHz'
+    
+class Time(Enum):
+    Microsecond = 'μs'
+    Millisecond = 'ms'
+    Second = 'sec'
+    
 class SCPI(Enum):
     On = 'ON'
     Off = 'OFF'
-    MHz = 'MHz'
-    kHz = 'kHz'
     dBm = 'dBm'
     Normal = 'NORM'
     Deep = 'DEEP'
@@ -87,6 +101,11 @@ class AgilentN5181A(QObject):
         self.write_thread = None
         self.runSweep = False
         self.commandLock = threading.Lock()
+        self.sweepType = Sweep.OFF
+        self.startFrequency = 100
+        self.stopFrequency = 6000
+        self.stepDwell = 0.1
+        self.stepCount = 100
     
     def detect(self):
         self.ping_started = True
@@ -123,16 +142,28 @@ class AgilentN5181A(QObject):
     
     def initInstrument(self):
         self.commandQueue.put((SCPI.Identity, ''))
-        
+    
     def setFrequency(self, freq: float):
-        suffix = SCPI.MHz.value
-        if freq > 6000.0:
-            freq = 6000.0
-        if freq < 1:
+        # Assume MHz
+        self.setFrequency(self, freq, Frequency.MHz.value)
+        
+    def setFrequency(self, freq: float, unit: str):
+        if unit == Frequency.GHz.value:
+            if freq > 6.0:
+                freq = 6.0
+            if freq < 0.000000001:
+                freq = 0.000000001
+        if unit == Frequency.MHz.value:
+            if freq > 6000.0:
+                freq = 6000.0
             if freq < 0.1:
-                freq = 0.1
-            suffix = SCPI.kHz.value
-        self.commandQueue.put((SCPI.Frequency, f'{SCPI.Frequency.value} {str(freq)} {suffix}'))
+                    freq = 0.1
+        if unit == Frequency.kHz.value:
+            if freq > 6000000.0:
+                freq = 6000000.0
+            if freq < 100.0:
+                freq = 100.0
+        self.commandQueue.put((SCPI.Frequency, f'{SCPI.Frequency.value} {str(freq)} {unit}'))
         
     def setPower(self, pow: float):
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
@@ -237,7 +268,47 @@ class AgilentN5181A(QObject):
             print(e)
             #self.error_occured.emit(e)
 
-    def startFrequencySweep(self, start: int, stop: int, steps: int, dwell: int, exp: bool):
+    def setSweepType(self, exp: bool):
+        if exp:
+            self.sweepType = Sweep.EXPONENTIAL
+        else:
+            self.sweepType = Sweep.LINEAR
+            
+    def setStartFrequency(self, freq: float, unit: str):
+        # Convert to MHz
+        if unit == Frequency.GHz.value:
+            freq *= 0.001
+        elif unit == Frequency.kHz.value:
+            freq *= 1000
+        elif unit == Frequency.Hz.value:
+            freq *= 1000000
+        self.startFrequency = freq
+        
+    def setStopFrequency(self, freq: float, unit: str):
+        # Convert to MHz
+        if unit == Frequency.GHz.value:
+            freq *= 0.001
+        elif unit == Frequency.kHz.value:
+            freq *= 1000
+        elif unit == Frequency.Hz.value:
+            freq *= 1000000
+        self.stopFrequency = freq
+    
+    def setStepDwell(self, dwell: float, unit: str):
+        # Convert to Sec
+        if unit == Time.Microsecond.value:
+            dwell *= 0.000001
+        elif unit == Time.Millisecond.value:
+            dwell *= 0.001
+        self.stepDwell = dwell
+        
+    def setStepCount(self, count: int):
+        self.stepCount = count
+        
+    def startFrequencySweep(self):
+        self.startFrequencySweep(self.startFrequency, self.stopFrequency, self.stepCount, self.stepDwell, self.sweepType == Sweep.EXPONENTIAL)    
+    
+    def startFrequencySweep(self, start: float, stop: float, steps: int, dwell: float, exp: bool):
         dwell *= 0.001
         if exp:
             self.sweepThread = threading.Thread(target=self.sweepExponential, args=(start, stop, steps, dwell))

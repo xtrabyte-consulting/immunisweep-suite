@@ -11,7 +11,7 @@ from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 
 from MainWindow import Ui_MainWindow
-from SignalGenerator import AgilentN5181A
+from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency
 from FieldProbe import ETSLindgrenHI6006
 from Plots import PowerPlot
 
@@ -173,24 +173,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweepRunning = False
         self.ouputOn = False
         self.modulationOn = False
+        self.modulationType = Modulation.AM
+        self.internalModulation = True
         self.measuredFiedldIntensity = 0.0
         self.desiredFieldIntensity = 0.0
         self.currentOutputPower = 0.0
         
         self.startDeviceDetection()
-        
-        self.freqStartBox.valueChanged.connect(self.on_freqStartBox_valueChanged)
-        # TODO: self.freqStartBox.setValue(self.startFrequency) & all others
-        self.freqStopBox.valueChanged.connect(self.on_freqStopBox_valueChanged)
-        self.stepDwellBox.valueChanged.connect(self.on_stepDwellBox_valueChanged)
-        self.stepCountBox.valueChanged.connect(self.on_stepCountBox_valueChanged)
-        self.amDepthBox.valueChanged.connect(self.on_amDepthBox_valueChanged)
-        self.amFreqBox.valueChanged.connect(self.on_amFreqBox_valueChanged)
-        self.setFieldIntensityBox.valueChanged.connect(self.on_setFieldIntensityBox_valueChanged)
-        self.startButton.pressed.connect(self.on_startButton_pressed)
-        self.linearSweepButton.toggled.connect(self.on_linearSweepButton_toggled)
-        self.expSweepButton.toggled.connect(self.on_expSweepButton_toggled)
-        self.sweepOffButton.toggled.connect(self.on_sweepOffButton_toggled)
         
     def startDeviceDetection(self):
         self.alerted = False
@@ -248,20 +237,242 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_radioButton_sweepType_toggled(self):
         sender = self.sender()
+        if sender.isChecked():
+            if sender == self.radioButton_linSweep:
+                self.toggleSweepUI(enabled=True)
+                self.sweepOn = True
+                self.signalGenerator.setSweepType(False)
+            elif sender == self.radioButton_logSweep:
+                # TODO: Logic to get sig gen to calculate steps with 1% jump spec
+                self.toggleSweepUI(enabled=True)
+                self.sweepOn = True
+                self.signalGenerator.setSweepType(True)
+            elif sender == self.radioButton_sweepOff:
+                self.toggleSweepUI(enabled=False)
+                self.sweepOn = False
+                
+    def toggleSweepUI(self, enabled: bool):
+        if enabled:
+            self.label_startFreq.setText('Start Frequency')
+        else:
+            self.label_startFreq.setText('Frequency')
+        self.spinBox_stopFreq.setEnabled(enabled)
+        self.spinBox_dwell.setEnabled(enabled)
+        self.comboBox_stopFreqUnit.setEnabled(enabled)
+        self.comboBox_dwellUnit.setEnabled(enabled)
+        self.spinBox_stepCount.setEnabled(enabled)
+        self.pushButton_startSweep.setEnabled(enabled)
+                
+    def on_spinBox_startFreq_valueChanged(self, freq: float):
+        if self.sweepOn:
+            self.signalGenerator.setStartFrequency(float(freq), self.comboBox_startFreqUnit.currentText())
+        else:
+            self.signalGenerator.setFrequency(float(freq), self.comboBox_startFreqUnit.currentText())
+            
+    def on_comboBox_startFreqUnit_activated(self):
+        # Could handle some multiplication here
+        # Lets keep a unified current freq value based out sig gen return value
+        self.deleteLater
+        
+    def on_spinBox_stopFreq_valueChanged(self, freq: float):
+        if self.sweepOn:
+            self.signalGenerator.setStopFrequency(float(freq), self.comboBox_stopFreqUnit.currentText())
+            
+    def on_comboBox_stopFreqUnit_activated(self):
+        # Could handle some multiplication here
+        # Lets keep a unified current freq value based out sig gen return value
+        self.deleteLater
+        
+    def on_spinBox_dwell_valueChanged(self, time: float):
+        if self.sweepOn:
+            self.signalGenerator.setStepDwell(float(time), self.comboBox_dwellUnit.currentText())
+            
+    def on_comboBox_dwellUnit_activated(self):
+        # Capture Spec Floor
+        if self.comboBox_dwellUnit.currentText() == Time.Microsecond.value:
+            if self.spinBox_dwell.value() < 1.05:
+                self.spinBox_dwell.setValue(1.05)
 
-    def on_freqStartBox_valueChanged(self, freq: float):
-        if not self.sweepRunning:
-            self.signalGenerator.setFrequency(float(freq))
-        self.startFrequency = freq
+    def on_spinBox_stepCount_valueChanged(self, steps: int):
+        if self.sweepOn:
+            self.signalGenerator.setStepCount(steps)
+    
+    def on_pushButton_startSweep_pressed(self):
+        self.signalGenerator.startFrequencySweep()
+        self.toggleSweepUI(enabled=False)
+        self.pushButton_pauseSweep.setEnabled(True)
         
-    def on_freqStopBox_valueChanged(self, freq: float):
-        self.stopFrequency = freq
+    def on_pushButton_pauseSweep_pressed(self):
+        self.signalGenerator.stopFrequencySweep()
         
-    def on_stepDwellBox_valueChanged(self, dwell: float):
-        self.stepDwell = dwell
+    def on_radioButton_modType_toggled(self):
+        sender = self.sender()
+        if sender.isChecked():
+            if sender == self.radioButton_amState:
+                self.modulationType = Modulation.AM
+                self.signalGenerator.setPMState(False)
+                self.signalGenerator.setFMState(False)
+                self.signalGenerator.setAMState(True)
+                self.toggleModControlTypeUI(am=True)
+            elif sender == self.radioButton_fmState:
+                self.modulationType = Modulation.FM
+                self.signalGenerator.setPMState(False)
+                self.signalGenerator.setAMState(False)
+                self.signalGenerator.setFMState(True)
+                self.toggleModControlTypeUI(am=False)
+                self.comboBox_depthDevUnit.clear()
+                self.comboBox_depthDevUnit.addItems([Frequency.Hz, Frequency.kHz, Frequency.MHz])
+            elif sender == self.radioButton_pmState:
+                self.modulationType = Modulation.PM
+                self.signalGenerator.setFMState(False)
+                self.signalGenerator.setAMState(False)
+                self.signalGenerator.setPMState(True)
+                self.toggleModControlTypeUI(am=False)
+                self.comboBox_depthDevUnit.clear()
+                self.comboBox_depthDevUnit.addItems(['Rad', 'Deg', 'PiRad'])
+                self.label_ampmMode.setText('Bandwidth Mode')
+                
+    def on_radioButton_source_toggled(self):
+        sender = self.sender()
+        if sender.isChecked():
+            if sender == self.radioButton_intSource:
+                self.internalModulation = True
+                self.toggleModSourceUI(internal=True)
+                self.setCurrentModSource(internal=True)
+            elif sender == self.radioButton_extSource:
+                self.internalModulation = False
+                self.toggleModSourceUI(internal=False)
+                self.setCurrentModSource(internal=False)
+                
+    def on_radioButton_coupling_toggled(self):
+        sender = self.sender()
+        if sender.isChecked():
+            if sender == self.radioButton_acCoupling:
+                if self.modulationType == Modulation.AM and self.internalModulation:
+                    self.signalGenerator.setAMType(True)
+                    self.comboBox_depthDevUnit.clear()
+                    self.comboBox_depthDevUnit.addItems(['%'])
+                else:
+                    self.setCurrentModCoupling(False)
+            elif sender == self.radioButton_acdcCoupling:
+                if self.modulationType == Modulation.AM and self.internalModulation:
+                    self.signalGenerator.setAMType(False)
+                    self.comboBox_depthDevUnit.clear()
+                    self.comboBox_depthDevUnit.addItems(['dBm'])
+                else:
+                    self.setCurrentModCoupling(True)
+                
+    def on_radioButton_modMode_toggled(self):
+        sender = self.sender()
+        if sender.isChecked():
+            if sender == self.radioButton_basicMode:
+                self.setCurrentModMode(True)
+            elif sender == self.radioButton_deepHighMode:
+                self.setCurrentModMode(False)
+                
+    def spinBox_depthDev_valueChanged(self, depthOrDev: float):
+        if self.modulationType == Modulation.AM:
+            if self.radioButton_acCoupling.isChecked():
+                self.signalGenerator.setAMLinearDepth(depthOrDev)
+            else:
+                self.signalGenerator.setAMExpDepth(depthOrDev)
+        elif self.modulationType == Modulation.FM:
+            self.signalGenerator.setFMStep(depthOrDev)
+        elif self.modulationType == Modulation.PM:
+            self.signalGenerator.setPMStep(depthOrDev)
         
-    def on_stepCountBox_valueChanged(self, count: int):
-        self.steps = count
+    def comboBox_depthDevUnit_activated(self):
+        #TODO
+        self.deleteLater
+    
+    def spinBox_modFreq_valueChanged(self, freq: float):
+        if self.modulationType == Modulation.AM:
+            self.signalGenerator.setAMFrequency(freq)
+        elif self.modulationType == Modulation.FM:
+            self.signalGenerator.setFMFrequency(freq)
+        elif self.modulationType == Modulation.PM:
+            self.signalGenerator.setPMFrequency(freq)
+            
+    def comboBox_modFreqUnit_activated(self):
+        #TODO
+        self.deleteLater
+        
+    def pushButton_modulationState_pressed(self):
+        sender = self.sender()
+        on = sender == self.pushButton_modulationOn
+        self.signalGenerator.setModulationState(on)
+        #TODO: Move To Signal
+        self.pushButton_modulationOff.setEnabled(on)
+        self.pushButton_modulationOn.setEnabled(not on)
+        
+    def setCurrentModMode(self, normal: bool):
+        if self.modulationType == Modulation.AM:
+            self.signalGenerator.setAMMode(normal)
+        elif self.modulationType == Modulation.PM:
+            self.signalGenerator.setPMBandwidth(normal)
+
+    def setCurrentModCoupling(self, dc: bool):
+        if self.modulationType == Modulation.AM:
+            self.signalGenerator.setAMCoupling(dc)
+        elif self.modulationType == Modulation.FM:
+            self.signalGenerator.setFMCoupling(dc)
+        elif self.modulationType == Modulation.PM:
+            self.signalGenerator.setPMCoupling(dc)
+    
+    def setCurrentModSource(self, internal: bool):
+        if self.modulationType == Modulation.AM:
+            self.signalGenerator.setAMSource(internal)
+        elif self.modulationType == Modulation.FM:
+            self.signalGenerator.setFMSource(internal)
+        elif self.modulationType == Modulation.PM:
+            self.signalGenerator.setPMSource(internal)
+    
+    def toggleModSourceUI(self, internal: bool):
+        self.radioButton_deepHighMode.setEnabled(internal)
+        self.radioButton_basicMode.setEnabled(internal)
+        self.spinBox_depthDev.setEnabled(internal)
+        self.comboBox_depthDevUnit.setEnabled(internal)
+        self.spinBox_modFreq.setEnabled(internal)
+        self.comboBox_modFreqUnit.setEnabled(internal)
+        if internal:
+            if self.modulationType == Modulation.AM:
+                self.label_couplingTypeTitle.setText('AM Type')
+                self.radioButton_acCoupling.setText('Linear')
+                self.radioButton_acCoupling.setEnabled(True)
+                self.radioButton_acCoupling.setChecked(True)
+                self.radioButton_acdcCoupling.setText('Exponential')
+                self.radioButton_acdcCoupling.setEnabled(True)
+            else:
+                self.label_couplingTypeTitle.setText('Exteneral Coupling')
+                self.radioButton_acCoupling.setText('AC Only')
+                self.radioButton_acCoupling.setEnabled(False)
+                self.radioButton_acdcCoupling.setText('AC + DC')
+                self.radioButton_acdcCoupling.setEnabled(False)
+        else:
+            self.label_couplingTypeTitle.setText('Exteneral Coupling')
+            self.radioButton_acCoupling.setText('AC Only')
+            self.radioButton_acCoupling.setEnabled(True)
+            self.radioButton_acdcCoupling.setText('AC + DC')
+            self.radioButton_acdcCoupling.setEnabled(True)
+        
+    def toggleModControlTypeUI(self, am: bool):
+        if am:
+            self.radioButton_deepHighMode.setText('Deep')
+            self.label_amDepthFPMDev.setText('Peak Depth')
+            self.label_couplingTypeTitle.setText('AM Type')
+            self.radioButton_acCoupling.setText('Linear')
+            self.radioButton_acCoupling.setEnabled(True)
+            self.radioButton_acCoupling.setChecked(True)
+            self.radioButton_acdcCoupling.setText('Exponential')
+            self.radioButton_acdcCoupling.setEnabled(True)
+        else:
+            self.radioButton_deepHighMode.setText('High')
+            self.label_amDepthFPMDev.setText('Peak Deviation')
+            self.label_couplingTypeTitle.setText('Exteneral Coupling')
+            self.radioButton_acCoupling.setText('AC Only')
+            self.radioButton_acdcCoupling.setText('AC + DC')
+            self.radioButton_acCoupling.setEnabled(True)
+            self.radioButton_acdcCoupling.setEnabled(False)        
         
     def on_amDepthBox_valueChanged(self, depth: float):
         self.amDepth = depth
@@ -379,6 +590,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_sigGen_sweepFinished(self):
         self.sweepRunning = False
         self.signalGenerator.setRFOut(False)
+        self.toggleSweepUI(enabled=True)
+        self.pushButton_startSweep.setEnabled(True)
         
     def on_sigGen_error(self, message: str):
         print(message)
@@ -456,3 +669,17 @@ if __name__ == '__main__':
     window.show()
     #app.aboutToQuit(window.killThreads())
     sys.exit(app.exec_())
+    
+    
+#self.freqStartBox.valueChanged.connect(self.on_freqStartBox_valueChanged)
+# TODO: self.freqStartBox.setValue(self.startFrequency) & all others
+#self.freqStopBox.valueChanged.connect(self.on_freqStopBox_valueChanged)
+#self.stepDwellBox.valueChanged.connect(self.on_stepDwellBox_valueChanged)
+#self.stepCountBox.valueChanged.connect(self.on_stepCountBox_valueChanged)
+#self.amDepthBox.valueChanged.connect(self.on_amDepthBox_valueChanged)
+#self.amFreqBox.valueChanged.connect(self.on_amFreqBox_valueChanged)
+#self.setFieldIntensityBox.valueChanged.connect(self.on_setFieldIntensityBox_valueChanged)
+#self.startButton.pressed.connect(self.on_startButton_pressed)
+#self.linearSweepButton.toggled.connect(self.on_linearSweepButton_toggled)
+#self.expSweepButton.toggled.connect(self.on_expSweepButton_toggled)
+#self.sweepOffButton.toggled.connect(self.on_sweepOffButton_toggled)

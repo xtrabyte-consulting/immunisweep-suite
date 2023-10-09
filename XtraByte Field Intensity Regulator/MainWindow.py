@@ -696,7 +696,7 @@ class Ui_MainWindow(object):
         self.comboBox_startFreqUnit.setItemText(2, _translate("MainWindow", "GHz"))
         self.comboBox_dwellUnit.setItemText(0, _translate("MainWindow", "μs"))
         self.comboBox_dwellUnit.setItemText(1, _translate("MainWindow", "ms"))
-        self.comboBox_dwellUnit.setItemText(2, _translate("MainWindow", "s"))
+        self.comboBox_dwellUnit.setItemText(2, _translate("MainWindow", "sec"))
         self.label_startFreq.setText(_translate("MainWindow", "Start Frequency"))
         self.label_amDepthFPMDev.setText(_translate("MainWindow", "Peak Depth:"))
         self.pushButton_modulationOn.setText(_translate("MainWindow", "Modulation On"))
