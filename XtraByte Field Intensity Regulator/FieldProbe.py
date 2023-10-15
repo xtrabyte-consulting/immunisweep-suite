@@ -1,5 +1,5 @@
 import serial
-from serial import SerialException, SerialTimeoutException
+from serial import SerialException, SerialTimeoutException, serialutil
 import threading
 import queue
 from abc import ABC, abstractmethod
@@ -129,6 +129,9 @@ class ETSLindgrenHI6006(QObject):
         self.is_running = True
         try:
             self.serial = serial.Serial(self.serial_port, baudrate=9600, bytesize=serial.SEVENBITS, parity=serial.PARITY_ODD, stopbits=1, timeout=5)
+            self.probe_thread = threading.Thread(target=self.readWriteProbe)
+            self.probe_thread.start()
+            self.initiaizeProbe()
         except ValueError as e:
             self.is_running = False
             self.serialConnectionError.emit(str(e))
@@ -136,9 +139,14 @@ class ETSLindgrenHI6006(QObject):
             self.is_running = False
             self.serialConnectionError.emit(str(e))
             print(str(e))
-        self.probe_thread = threading.Thread(target=self.readWriteProbe)
-        self.probe_thread.start()
-        self.initiaizeProbe()
+        except FileNotFoundError as e:
+            self.is_running = False
+            self.serialConnectionError.emit(str(e))
+            print(str(e))
+        except serialutil.SerialException as e:
+            running = False
+            self.serialConnectionError.emit(str(e))
+            print(str(e))
         
     def stop(self):
         self.is_running = False

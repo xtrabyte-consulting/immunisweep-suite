@@ -1,5 +1,6 @@
 import time
 import socketscpi
+import socket
 import threading
 import queue
 import ping3
@@ -75,6 +76,7 @@ class AgilentN5181A(QObject):
     instrumentConnected = pyqtSignal(str)
     instrumentDetected = pyqtSignal(bool)
     error = pyqtSignal(str)
+    #TODO: UI For ALL These
     modModeSet = pyqtSignal(int, bool)
     modStateSet = pyqtSignal(bool)
     modSourceSet = pyqtSignal(bool)
@@ -106,16 +108,20 @@ class AgilentN5181A(QObject):
         self.stopFrequency = 6000
         self.stepDwell = 0.1
         self.stepCount = 100
+        self.clearing = False
+        self.detected = False
     
     def detect(self):
+        print('Detecting.')
         self.ping_started = True
         self.ping_thread = threading.Thread(target=self.check_static_ip)
         self.count = 4
-        self.connected = False
+        print('Starting ping thread.')
         self.ping_thread.start()
         
     def retryDetection(self):
         self.count = 4
+        self.ping_started = True
     
     def stopDetection(self):
         self.ping_started = False
@@ -128,14 +134,22 @@ class AgilentN5181A(QObject):
             self.write_thread.join()
         
     def connect(self):
-        self.is_running = True
         try:
             self.instrument = socketscpi.SocketInstrument(self.ip_address)
             self.instrumentConnected.emit(self.instrument.instId)
-            print(f'Connected To: {self.instrument.instId}')
+            #print(f'Connected To: {self.instrument.instId}')
             self.write_thread = threading.Thread(target=self.writeSCPI)
+            self.is_running = True
+            self.clearing = False
             self.write_thread.start()
         except socketscpi.SockInstError as e:
+            self.error.emit(str(e))
+            print(f'Error on connect: {str(e)}')
+            self.is_running = False
+        except socket.timeout as e:
+            self.error.emit(str(e))
+            print(f'Socket Error: {str(e)}')
+        except ConnectionRefusedError as e:
             self.error.emit(str(e))
             print(f'Error on connect: {str(e)}')
             self.is_running = False
@@ -166,6 +180,7 @@ class AgilentN5181A(QObject):
         self.commandQueue.put((SCPI.Frequency, f'{SCPI.Frequency.value} {str(freq)} {unit}'))
         
     def setPower(self, pow: float):
+        print(f'Setting Power: {str(pow)}')
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
     def setModulationType(self, mod):
@@ -210,7 +225,7 @@ class AgilentN5181A(QObject):
             freq = 20000
         elif freq < 0.0001:
             freq = 0.0001
-        self.commandQueue.put((SCPI.AMFreq, f'{SCPI.AMFreq.value} {str(freq)} {SCPI.kHz.value}'))
+        self.commandQueue.put((SCPI.AMFreq, f'{SCPI.AMFreq.value} {str(freq)} {Frequency.kHz.value}'))
         
     def setAMState(self, on: bool):
         self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.On.value if on else SCPI.Off.value}'))
@@ -221,13 +236,13 @@ class AgilentN5181A(QObject):
     def setFMSource(self, internal: bool):
         self.commandQueue.put((SCPI.FMSource, f'{SCPI.FMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
  
-    def setFMFrequency(self, freq: float, unit: str = SCPI.kHz.value):
+    def setFMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
         # Range: 0.1 Hz -> 2MHz
         self.commandQueue.put((SCPI.FMFreq, f'{SCPI.FMFreq.value} {str(freq)} {unit}'))
         
     def setFMStep(self, step: float):
         # Range: 0.5Hz - 1e6 Hz
-        self.commandQueue.put((SCPI.FMStep, f'{SCPI.FMFreq.value} {str(step)}'))
+        self.commandQueue.put((SCPI.FMStep, f'{SCPI.FMStep.value} {str(step)}'))
     
     def setFMCoupling(self, dc: bool):
         self.commandQueue.put((SCPI.FMCoupling, f'{SCPI.FMCoupling.value} {SCPI.DC.value if dc else SCPI.AC.value}'))
@@ -238,7 +253,7 @@ class AgilentN5181A(QObject):
     def setPMSource(self, internal: bool):
         self.commandQueue.put((SCPI.PMSource, f'{SCPI.PMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
  
-    def setPMFrequency(self, freq: float, unit: str = SCPI.kHz.value):
+    def setPMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
         # Range: 0.1 Hz -> 2MHz
         self.commandQueue.put((SCPI.PMFreq, f'{SCPI.PMFreq.value} {str(freq)} {unit}'))
         
@@ -253,12 +268,12 @@ class AgilentN5181A(QObject):
         self.commandQueue.put((SCPI.PMBand, f'{SCPI.PMBand.value} {SCPI.Normal.value if normal else SCPI.High.value}'))
     
     def setRFOut(self, on: bool):
-        self.clearQueue()
+        #self.clearQueue()
         self.commandQueue.put((SCPI.RFOut, f'{SCPI.RFOut.value} {SCPI.On.value if on else SCPI.Off.value}'))
         
     def clearQueue(self):
         self.clearing = True
-        while self.commandQueue.qsize() is not 0:
+        while self.commandQueue.qsize() != 0:
             self.commandQueue.get()
 
     def clearErrors(self):
@@ -341,23 +356,29 @@ class AgilentN5181A(QObject):
         self.sweepFinished.emit()
     
     def writeSCPI(self):
+        print("Starting SCPI comms loop...")
         while self.is_running:
             # This will block until a command is availible
+            print("SCPI Write Thread Running")
             if self.clearing:
+                print("Blocking Loop until command Queue is empty.")
                 self.commandQueue.join()
             else:
+                print("Retreiving next command")
                 command = self.commandQueue.get()
+                print(f"Sending command: {str(command[0])}")
                 commandType = command[0]
                 commandValue = command[1]
                 if commandType == SCPI.Exit:
                     print('Exiting write thread')
                     break
-                        
+                print(f'Writing SCPI: {str(commandValue)}')
                 self.instrument.write(commandValue)
                 complete = self.instrument.query(SCPI.OperationComplete.value)
                 #if complete:
-                state = self.instrument.query(f'{commandValue}?')
-                
+                print(f'Write operation completed: {complete}. Querying state...')
+                state = self.instrument.query(f'{commandType.value}?')
+                print(f'Query response: {state}')
                 if commandType == SCPI.Identity: 
                     self.instrumentConnected.emit(state)
                 elif commandType == SCPI.RFOut:
@@ -405,21 +426,28 @@ class AgilentN5181A(QObject):
     
                 
     def check_static_ip(self):
-        while self.ping_started:
-            if not self.connected:
-                try:
-                    response_time = ping3.ping(self.ip_address, timeout = 0.5)
-                    if response_time is not None and response_time:
-                        if response_time:
-                            self.instrumentDetected.emit(True)
-                            self.connected = True
+        responded = False
+        while self.ping_started and not responded:
+            print('Ping started.')
+            try:
+                print('Pinging...')
+                response_time = ping3.ping(self.ip_address, timeout = 0.5)
+                print(f'Response: {str(response_time)}')
+                if response_time is not None and response_time:
+                    if response_time:
+                        self.instrumentDetected.emit(True)
+                        self.detected = True
+                        responded = True
                     else:
-                        if (self.count == 0):
-                            self.instrumentDetected.emit(False)
-                        else:
-                            self.count -= 1
-                except Exception as e:
+                        print(str(response_time))
+                else:
                     if (self.count == 0):
-                            self.error.emit(f'Network error occurred: {str(e)}')
+                        self.instrumentDetected.emit(False)
                     else:
                         self.count -= 1
+            except Exception as e:
+                print(f'Network Error {str(e)}')
+                if (self.count == 0):
+                        self.error.emit(f'Network error occurred: {str(e)}')
+                else:
+                    self.count -= 1

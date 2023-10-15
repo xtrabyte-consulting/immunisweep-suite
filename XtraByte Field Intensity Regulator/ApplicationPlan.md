@@ -85,3 +85,15 @@ Unit Pictures
 PM, AM FM, control abilities;
 Linear, Exp Sweep
 Internal, External Mod Coupling/Source
+
+-------------Oct 15---------------
+Plots not showing
+Allow spin boxes to go neg
+Modulation label buttons are off (freq not heard, Mode doesn't chnage % - dBm)
+All radio buttons don't intiate with one picked
+Not all radio buttons disabled when its time (FM mod mode buttons)
+PM button not togglable.
+Sweep still not implemented.
+Device pictures needed.
+Signal modulation UI unresponsive.
+Pow and Freq run 3 times...

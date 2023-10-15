@@ -164,9 +164,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         # Initiate Plots
         self.intensityPlot = PowerPlot()
-        self.topGraphicsView.setScene(self.intensityPlot)
+        self.graphicsView_powerAndField.setScene(self.intensityPlot)
         self.frequencyPlot = PowerPlot(title="Frquency", labels={'left': "Frquency (dBm)", 'bottom': 'Time (sec)'})
-        self.bottomGraphicsView.setScene(self.frequencyPlot)
+        self.graphicsView_frequencySweep.setScene(self.frequencyPlot)
         
         # Initialize State
         self.powerControl = True
@@ -217,6 +217,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.pidController.clear()
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
+        print(f"Spin box value changed: {target}")
         if self.powerControl:
             self.pidController.setTargetValue(float(target))
         else:
@@ -321,7 +322,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.signalGenerator.setFMState(True)
                 self.toggleModControlTypeUI(am=False)
                 self.comboBox_depthDevUnit.clear()
-                self.comboBox_depthDevUnit.addItems([Frequency.Hz, Frequency.kHz, Frequency.MHz])
+                self.comboBox_depthDevUnit.addItems([Frequency.Hz.value, Frequency.kHz.value, Frequency.MHz.value])
             elif sender == self.radioButton_pmState:
                 self.modulationType = Modulation.PM
                 self.signalGenerator.setFMState(False)
@@ -446,13 +447,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.label_couplingTypeTitle.setText('Exteneral Coupling')
                 self.radioButton_acCoupling.setText('AC Only')
                 self.radioButton_acCoupling.setEnabled(False)
-                self.radioButton_acdcCoupling.setText('AC + DC')
+                self.radioButton_acdcCoupling.setText('AC/DC')
                 self.radioButton_acdcCoupling.setEnabled(False)
         else:
             self.label_couplingTypeTitle.setText('Exteneral Coupling')
             self.radioButton_acCoupling.setText('AC Only')
             self.radioButton_acCoupling.setEnabled(True)
-            self.radioButton_acdcCoupling.setText('AC + DC')
+            self.radioButton_acdcCoupling.setText('AC/DC')
             self.radioButton_acdcCoupling.setEnabled(True)
         
     def toggleModControlTypeUI(self, am: bool):
@@ -470,7 +471,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_amDepthFPMDev.setText('Peak Deviation')
             self.label_couplingTypeTitle.setText('Exteneral Coupling')
             self.radioButton_acCoupling.setText('AC Only')
-            self.radioButton_acdcCoupling.setText('AC + DC')
+            self.radioButton_acdcCoupling.setText('AC/DC')
             self.radioButton_acCoupling.setEnabled(True)
             self.radioButton_acdcCoupling.setEnabled(False)        
         
@@ -531,9 +532,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.intensityPlot.plotData(QTime.currentTime(), z)
     
     def on_fieldProbe_batteryReceived(self, level: int):
+        print(f"Probe Charge Level: {str(level)}")
         self.label_chargeLevel.setText(str(level))
         
     def on_fieldProbe_temperatureReceived(self, temp: float):
+        print(f"Probe Temp Receievd: {str(temp)}")
         self.label_temperature.setText(str(temp))
     
     def on_fieldProbe_fieldProbeError(self, message: str):
@@ -574,17 +577,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.alerted = True        
     
     def on_sigGen_instrumentConnected(self, message: str):
-        self.connectSigGenButton.setText('Connected')
+        self.pushButton_detectSigGen.hide()
         #TODO: self.connectSigGenButton.setIcon(':/icons/connected.png')
-        self.sigGenLabel.setText(''.join(message.split(',')))
+        self.label_sigGen.setText(''.join(message.split(',')))
         
     def on_sigGen_frequencySet(self, frequency: float):
         self.currentOutputFrequency = frequency
         self.frequencyPlot.plotData(QTime.currentTime(), frequency)
+        self.lcdNumber_freqOut.display(frequency)
     
     def on_sigGen_powerSet(self, power: float):
         self.currentOutputPower = power
-        self.controlLoopAdjLcd.display(power)
+        self.lcdNumber_powerOut.display(power)
         self.intensityPlot.plotData(QTime.currentTime(), power)
     
     def on_sigGen_sweepFinished(self):
