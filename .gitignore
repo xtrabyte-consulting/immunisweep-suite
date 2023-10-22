@@ -1,0 +1,29 @@
+# Compiled Python files
+__pycache__/
+*.pyc
+
+# PyQt compiled files
+*.pyd
+*.so
+*.dll
+*.cpython-*.pyc
+
+# PyQt Designer files
+#*.ui
+
+# Virtual environment
+venv/
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Logs
+*.log
+
+# Zips
+*.zip
+
+# Database
+*.DS_Store
