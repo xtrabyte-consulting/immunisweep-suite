@@ -2,5 +2,7 @@
 <qresource>
     <file alias="sig_gen.png">Icons/AgilentN5181A.png</file>
     <file alies="probe.png">Icons/HI-6006.png</file>
+    <file alias="rf_on.png">Icons/broadcast-on.png</file>
+    <file alias="rf_off.png">Icons/broadcast-off.png</file>
 </qresource>
 </RCC>
