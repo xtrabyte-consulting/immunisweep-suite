@@ -18,6 +18,12 @@ from Plots import PowerPlot
 import os
 import sys
 
+import os
+from PyQt5.QtCore import QResource
+
+def load_resources():
+    QResource.registerResource(os.path.join(os.path.dirname(__file__), 'Resources.qrc'))
+
 try:
     # Include in try/except block if you're also targeting Mac/Linux
     from PyQt5.QtWinExtras import QtWin
@@ -120,11 +126,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.radioButton_logSweep.toggled.connect(self.on_radioButton_sweepType_toggled)
         self.radioButton_sweepOff.toggled.connect(self.on_radioButton_sweepType_toggled)
         self.spinBox_startFreq.valueChanged.connect(self.on_spinBox_startFreq_valueChanged)
-        self.comboBox_startFreqUnit.activated.connect(self.on_comboBox_startFreqUnit_activated)
+        self.comboBox_startFreqUnit.activated[str].connect(self.on_comboBox_startFreqUnit_activated)
         self.spinBox_stopFreq.valueChanged.connect(self.on_spinBox_stopFreq_valueChanged)
-        self.comboBox_stopFreqUnit.activated.connect(self.on_comboBox_stopFreqUnit_activated)
+        self.comboBox_stopFreqUnit.activated[str].connect(self.on_comboBox_stopFreqUnit_activated)
         self.spinBox_dwell.valueChanged.connect(self.on_spinBox_dwell_valueChanged)
-        self.comboBox_dwellUnit.activated.connect(self.on_comboBox_dwellUnit_activated)
+        self.comboBox_dwellUnit.activated[str].connect(self.on_comboBox_dwellUnit_activated)
         self.spinBox_stepCount.valueChanged.connect(self.on_spinBox_stepCount_valueChanged)
         self.pushButton_startSweep.pressed.connect(self.on_pushButton_startSweep_pressed)
         self.pushButton_pauseSweep.pressed.connect(self.on_pushButton_pauseSweep_pressed)
@@ -153,9 +159,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.radioButton_basicMode.toggled.connect(self.on_radioButton_modMode_toggled)
         self.radioButton_deepHighMode.toggled.connect(self.on_radioButton_modMode_toggled)
         self.spinBox_depthDev.valueChanged.connect(self.spinBox_depthDev_valueChanged)
-        self.comboBox_depthDevUnit.activated.connect(self.comboBox_depthDevUnit_activated)
+        self.comboBox_depthDevUnit.activated[str].connect(self.comboBox_depthDevUnit_activated)
         self.spinBox_modFreq.valueChanged.connect(self.spinBox_modFreq_valueChanged)
-        self.comboBox_modFreqUnit.activated.connect(self.comboBox_modFreqUnit_activated)
+        self.comboBox_modFreqUnit.activated[str].connect(self.comboBox_modFreqUnit_activated)
         self.pushButton_modulationOff.pressed.connect(self.pushButton_modulationState_pressed)
         self.pushButton_modulationOn.pressed.connect(self.pushButton_modulationState_pressed)
         
@@ -263,27 +269,80 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_dwellUnit.setEnabled(enabled)
         self.spinBox_stepCount.setEnabled(enabled)
         self.pushButton_startSweep.setEnabled(enabled)
+    
+    def applyFrequencyLimits(self, freq: float, unit: str) -> (float, str):
+        if unit == Frequency.kHz.value:
+            if freq > 1000.0:
+                unit = Frequency.MHz.value
+                freq = freq / 1000.0
+            elif freq < 100.0:
+                freq = 100.0
+        elif unit == Frequency.MHz.value:
+            if freq > 1000.0:
+                unit = Frequency.GHz.value
+                freq = freq / 1000.0
+            elif freq < 0.1:
+                freq = 0.1
+        elif unit == Frequency.GHz.value:
+            if freq < 0.0001:
+                freq = 0.0001
+            elif freq > 6.0:
+                freq = 6.0
+        return freq, unit
                 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
+        unit = self.comboBox_startFreqUnit.currentText()
+        self.comboBox_startFreqUnit.disconnect(self.on_comboBox_startFreqUnit_activated)
+        self.spinBox_startFreq.disconnect(self.on_spinBox_startFreq_valueChanged)
+        freq, unit = self.applyFrequencyLimits(freq, unit)
+        self.spinBox_startFreq.setValue(freq)
+        self.comboBox_startFreqUnit.setCurrentText(unit)
+        self.comboBox_startFreqUnit.connect(self.on_comboBox_startFreqUnit_activated)
+        self.spinBox_startFreq.connect(self.on_spinBox_startFreq_valueChanged)
         if self.sweepOn:
-            self.signalGenerator.setStartFrequency(float(freq), self.comboBox_startFreqUnit.currentText())
+            self.signalGenerator.setStartFrequency(float(freq), unit)
         else:
-            self.signalGenerator.setFrequency(float(freq), self.comboBox_startFreqUnit.currentText())
+            self.signalGenerator.setFrequency(float(freq), unit)
             
-    def on_comboBox_startFreqUnit_activated(self):
-        # Could handle some multiplication here
-        # Lets keep a unified current freq value based out sig gen return value
-        self.deleteLater
+    def on_comboBox_startFreqUnit_activated(self, unit: str):
+        freq = self.spinBox_startFreq.value()
+        self.comboBox_startFreqUnit.disconnect(self.on_comboBox_startFreqUnit_activated)
+        self.spinBox_startFreq.disconnect(self.on_spinBox_startFreq_valueChanged)
+        freq, unit = self.applyFrequencyLimits(freq, unit)
+        self.spinBox_startFreq.setValue(freq)
+        self.comboBox_startFreqUnit.setCurrentText(unit)
+        self.comboBox_startFreqUnit.connect(self.on_comboBox_startFreqUnit_activated)
+        self.spinBox_startFreq.connect(self.on_spinBox_startFreq_valueChanged)
+        if self.sweepOn:
+            self.signalGenerator.setStartFrequency(float(freq), unit)
+        else:
+            self.signalGenerator.setFrequency(float(freq), unit)
         
     def on_spinBox_stopFreq_valueChanged(self, freq: float):
+        unit = self.comboBox_stopFreqUnit.currentText()
+        self.comboBox_stopFreqUnit.disconnect(self.on_comboBox_stopFreqUnit_activated)
+        self.spinBox_stopFreq.disconnect(self.on_spinBox_stopFreq_valueChanged)
+        freq, unit = self.applyFrequencyLimits(freq, unit)
+        self.spinBox_stopFreq.setValue(freq)
+        self.comboBox_stopFreqUnit.setCurrentText(unit)
+        self.comboBox_stopFreqUnit.connect(self.on_comboBox_stopFreqUnit_activated)
+        self.spinBox_stopFreq.connect(self.on_spinBox_stopFreq_valueChanged)
         if self.sweepOn:
-            self.signalGenerator.setStopFrequency(float(freq), self.comboBox_stopFreqUnit.currentText())
+            self.signalGenerator.setStopFrequency(float(freq), unit)
             
-    def on_comboBox_stopFreqUnit_activated(self):
+    def on_comboBox_stopFreqUnit_activated(self, unit: str):
         # Could handle some multiplication here
-        # Lets keep a unified current freq value based out sig gen return value
-        self.deleteLater
-        
+        freq = self.spinBox_stopFreq.value()
+        self.comboBox_stopFreqUnit.disconnect(self.on_comboBox_stopFreqUnit_activated)
+        self.spinBox_stopFreq.disconnect(self.on_spinBox_stopFreq_valueChanged)
+        freq, unit = self.applyFrequencyLimits(freq, unit)
+        self.spinBox_stopFreq.setValue(freq)
+        self.comboBox_stopFreqUnit.setCurrentText(unit)
+        self.comboBox_stopFreqUnit.connect(self.on_comboBox_stopFreqUnit_activated)
+        self.spinBox_stopFreq.connect(self.on_spinBox_stopFreq_valueChanged)
+        if self.sweepOn:
+            self.signalGenerator.setStopFrequency(freq, unit)
+
     def on_spinBox_dwell_valueChanged(self, time: float):
         if self.sweepOn:
             self.signalGenerator.setStepDwell(float(time), self.comboBox_dwellUnit.currentText())
@@ -504,8 +563,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str):
         self.pushButton_detectFieldProbe.hide()
-        #TODO: self.connectFieldProbeButton.setIcon(':/icons/connected.png')
-        self.fieldProbeLabel.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial)
+        self.label_fieldProbe.setIcon(':/Icons/probe.png')
+        self.label_fieldProbe.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial)
         self.fieldProbe.getEField()
       
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
@@ -533,11 +592,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_fieldProbe_batteryReceived(self, level: int):
         print(f"Probe Charge Level: {str(level)}")
-        self.label_chargeLevel.setText(str(level))
+        self.label_chargeLevel.setText(f'{str(level)} %')
         
     def on_fieldProbe_temperatureReceived(self, temp: float):
         print(f"Probe Temp Receievd: {str(temp)}")
-        self.label_temperature.setText(str(temp))
+        self.label_temperature.setText(f'{str(temp)} °F')
     
     def on_fieldProbe_fieldProbeError(self, message: str):
         print(f"Probe Error: {message}")
@@ -578,8 +637,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_instrumentConnected(self, message: str):
         self.pushButton_detectSigGen.hide()
-        #TODO: self.connectSigGenButton.setIcon(':/icons/connected.png')
         self.label_sigGen.setText(''.join(message.split(',')))
+        self.label_sigGen.setIcon(':/Icons/sig_gen.png')
         
     def on_sigGen_frequencySet(self, frequency: float):
         self.currentOutputFrequency = frequency
@@ -668,6 +727,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
+    load_resources()
     #app.setWindowIcon(QtGui.QIcon(':/icons/field_controller.ico'))
     window = MainWindow()
     window.show()
