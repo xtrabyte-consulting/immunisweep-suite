@@ -78,15 +78,10 @@ Stop:
 AgilentSCPI: socket, socketscpi, visa
 
 
-Only strat discovery threads once UI is setup.
 
-Missing: X, Y, Z field inesities:, Probe Temp, Charge
+### -------------Oct 15---------------
+
 Unit Pictures
-PM, AM FM, control abilities;
-Linear, Exp Sweep
-Internal, External Mod Coupling/Source
-
--------------Oct 15---------------
 Plots not showing
 Allow spin boxes to go neg
 Modulation label buttons are off (freq not heard, Mode doesn't chnage % - dBm)
@@ -97,3 +92,29 @@ Sweep still not implemented.
 Device pictures needed.
 Signal modulation UI unresponsive.
 Pow and Freq run 3 times...
+Cleanup threads with SIGINT
+
+## Todo
+
+- Plots not showing
+- ?? Not all radio buttons disabled when its time (FM mod mode buttons)
+- Sweep still not implemented.
+- Signal modulation UI unresponsive.
+- Pow and Freq run 3 times...
+- Cleanup threads with SIGINT
+- Only start discovery threads once UI is setup
+- Other widgets
+
+## Done
+
+- PM button not togglable.
+- freq not heard
+- Modulation label buttons are off (, Mode doesn't chnage % - dBm)
+- Allow spin boxes to go neg
+- Unit Pictures
+- Missing: X, Y, Z field inesities:, Probe Temp, Charge
+- PM, AM FM, control abilities;
+- Linear, Exp Sweep
+- Internal, External Mod Coupling/Source
+- All radio buttons don't intiate with one picked
+- Device pictures needed.

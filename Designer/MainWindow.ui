@@ -160,6 +160,9 @@
            <property name="maximum">
             <double>5.000000000000000</double>
            </property>
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+           </property>
            <property name="value">
             <double>1.000000000000000</double>
            </property>
@@ -230,6 +233,9 @@
             <string>ΦM</string>
            </property>
            <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoExclusive">
             <bool>false</bool>
            </property>
           </widget>
@@ -309,7 +315,14 @@
        <item row="24" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_depthDev">
          <item>
-          <widget class="QDoubleSpinBox" name="spinBox_depthDev"/>
+          <widget class="QDoubleSpinBox" name="spinBox_depthDev">
+           <property name="minimum">
+            <double>-99.000000000000000</double>
+           </property>
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QComboBox" name="comboBox_depthDevUnit">
@@ -409,6 +422,9 @@
            <property name="maximum">
             <double>6000.000000000000000</double>
            </property>
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+           </property>
            <property name="value">
             <double>6000.000000000000000</double>
            </property>
@@ -450,7 +466,20 @@
        <item row="6" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_targetField">
          <item>
-          <widget class="QDoubleSpinBox" name="spinBox_targetStrength"/>
+          <widget class="QDoubleSpinBox" name="spinBox_targetStrength">
+           <property name="minimum">
+            <double>-110.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>20.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_strengthUnit">
@@ -541,6 +570,12 @@
          <property name="maximum">
           <number>100000</number>
          </property>
+         <property name="singleStep">
+          <number>10</number>
+         </property>
+         <property name="stepType">
+          <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+         </property>
          <property name="value">
           <number>1</number>
          </property>
@@ -609,6 +644,9 @@
            </property>
            <property name="maximum">
             <double>2000.000000000000000</double>
+           </property>
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
            </property>
            <property name="value">
             <double>1.050000000000000</double>
@@ -692,7 +730,7 @@
        </property>
        <item>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="3" column="1">
+         <item row="4" column="1">
           <layout class="QGridLayout" name="gridLayout_probeStats">
            <item row="1" column="0">
             <widget class="QLabel" name="label_chargeTitle">
@@ -748,21 +786,7 @@
            </item>
           </layout>
          </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="label_sigGen">
-           <property name="text">
-            <string>Field Probe Photo</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_fieldProbe">
-           <property name="text">
-            <string>Signal Generator Photo</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <layout class="QGridLayout" name="gridLayout_SigGenStats">
            <item row="0" column="1">
             <widget class="QLabel" name="label_sgMake">
@@ -808,34 +832,7 @@
            </item>
           </layout>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_deviceSettings">
-           <property name="font">
-            <font>
-             <pointsize>16</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Signal Generator</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QPushButton" name="pushButton_detectSigGen">
-           <property name="minimumSize">
-            <size>
-             <width>175</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Find</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
+         <item row="5" column="1">
           <widget class="QPushButton" name="pushButton_detectFieldProbe">
            <property name="minimumSize">
             <size>
@@ -859,6 +856,47 @@
            </property>
            <property name="text">
             <string>Field Probe</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QPushButton" name="pushButton_detectSigGen">
+           <property name="minimumSize">
+            <size>
+             <width>175</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Find</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_deviceSettings">
+           <property name="font">
+            <font>
+             <pointsize>16</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Signal Generator</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_sigGen">
+           <property name="text">
+            <string>Signal Generator Photo</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="label_fieldProbe">
+           <property name="text">
+            <string>Field Probe Photo</string>
            </property>
           </widget>
          </item>
@@ -895,8 +933,14 @@
            <property name="digitCount">
             <number>5</number>
            </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
            <property name="value" stdset="0">
-            <double>5.000000000000000</double>
+            <double>0.000000000000000</double>
+           </property>
+           <property name="intValue" stdset="0">
+            <number>0</number>
            </property>
           </widget>
          </item>
@@ -930,7 +974,23 @@
           </widget>
          </item>
          <item>
-          <widget class="QLCDNumber" name="lcdNumber_xMag"/>
+          <widget class="QLCDNumber" name="lcdNumber_xMag">
+           <property name="font">
+            <font>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="smallDecimalPoint">
+            <bool>false</bool>
+           </property>
+           <property name="digitCount">
+            <number>5</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_xMagUnit">
@@ -942,7 +1002,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>18</pointsize>
+             <pointsize>20</pointsize>
             </font>
            </property>
            <property name="text">
@@ -962,7 +1022,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLCDNumber" name="lcdNumber_yMag"/>
+          <widget class="QLCDNumber" name="lcdNumber_yMag">
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_yMagUnit">
@@ -974,7 +1038,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>18</pointsize>
+             <pointsize>20</pointsize>
             </font>
            </property>
            <property name="text">
@@ -994,7 +1058,14 @@
           </widget>
          </item>
          <item>
-          <widget class="QLCDNumber" name="lcdNumber_zMag"/>
+          <widget class="QLCDNumber" name="lcdNumber_zMag">
+           <property name="smallDecimalPoint">
+            <bool>false</bool>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_zMagUnit">
@@ -1006,7 +1077,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>18</pointsize>
+             <pointsize>20</pointsize>
             </font>
            </property>
            <property name="text">
@@ -1220,7 +1291,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QLabel" name="label_4">
+          <widget class="QLabel" name="label_modulationType">
            <property name="font">
             <font>
              <pointsize>18</pointsize>
