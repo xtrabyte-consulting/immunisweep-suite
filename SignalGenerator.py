@@ -4,6 +4,7 @@ import socket
 import threading
 import queue
 import ping3
+import math
 from PyQt5.QtCore import QObject, pyqtSignal
 from enum import Enum
 
@@ -85,11 +86,12 @@ class AgilentN5181A(QObject):
     modFreqSet = pyqtSignal(int, float)
     modCouplingSet = pyqtSignal(int, bool)
     amTypeSet = pyqtSignal(bool)
-    amDepthSet = pyqtSignal(float)
+    modDepthSet = pyqtSignal(float)
     frequencySet = pyqtSignal(float)
     powerSet = pyqtSignal(float)
     rfOutSet = pyqtSignal(bool)
     sweepFinished = pyqtSignal()
+    sweepStatus = pyqtSignal(float)
     
     def __init__(self, ip_address: str = '192.168.100.79',  port: int = 5024):
         super().__init__()
@@ -347,15 +349,22 @@ class AgilentN5181A(QObject):
         while current <= stop and self.runSweep:
             self.setFrequency(current)
             current += step
+            self.sweepStatus.emit((current - start) / (stop - start) * 100)
             time.sleep(dwell)
         self.sweepFinished.emit()
-        
+    
+
+    def log_percentage(curr_val, min_val, max_val):
+        normalized_curr = (math.log(curr_val) - math.log(min_val)) / (math.log(max_val) - math.log(min_val))
+        return normalized_curr * 100
+    
     def sweepExponential(self, start, stop, steps, dwell):
         ratio = pow((stop / start), 1 / (steps - 1))
         current = start
         while current <= stop and self.runSweep:
             self.setFrequency(current)
             current *= ratio
+            self.sweepStatus.emit(self.log_percentage(current, start, stop))
             time.sleep(dwell)
         self.sweepFinished.emit()
     
@@ -402,9 +411,9 @@ class AgilentN5181A(QObject):
                 elif commandType == SCPI.AMSource:
                     self.modSourceSet.emit(Modulation.AM.value, SCPI.Internal.value == state)
                 elif commandType == SCPI.AMLinDepth:
-                    self.amDepthSet.emit(float(state))
+                    self.modDepthSet.emit(float(state))
                 elif commandType == SCPI.AMExpDepth:
-                    self.amDepthSet.emit(float(state))
+                    self.modDepthSet.emit(float(state))
                 elif commandType == SCPI.AMCoupling:
                     self.modCouplingSet.emit(Modulation.AM.value, state == SCPI.AC.value)
                 elif commandType == SCPI.AMFreq:
