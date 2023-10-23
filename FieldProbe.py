@@ -147,6 +147,10 @@ class ETSLindgrenHI6006(QObject):
             running = False
             self.serialConnectionError.emit(str(e))
             print(str(e))
+        except:
+            self.is_running = False
+            self.serialConnectionError.emit('Unknown Error')
+            print('Unknown Error')
         
     def stop(self):
         self.is_running = False

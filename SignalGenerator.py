@@ -153,6 +153,10 @@ class AgilentN5181A(QObject):
             self.error.emit(str(e))
             print(f'Error on connect: {str(e)}')
             self.is_running = False
+        except:
+            self.error.emit('Unknown Error')
+            print('Unknown Error')
+            self.is_running = False
     
     def initInstrument(self):
         self.commandQueue.put((SCPI.Identity, ''))
