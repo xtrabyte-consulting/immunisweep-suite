@@ -11,8 +11,8 @@ from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 
 from MainWindow import Ui_MainWindow
-from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency
-from FieldProbe import ETSLindgrenHI6006
+from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency, SignalGenerator
+from FieldProbe import ETSLindgrenHI6006, FieldProbe
 from Plots import PowerPlot
 
 import os
@@ -84,7 +84,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle('XtraByte Field Controller')
         
         # Field Probe Signal -> Slot Connections
-        self.fieldProbe = ETSLindgrenHI6006('COM5')
+        #self.fieldProbe = ETSLindgrenHI6006('COM5')
+        self.fieldProbe = FieldProbe()
         self.fieldProbe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.fieldProbe.identityReceived.connect(self.on_fieldProbe_identityReceived)
         self.fieldProbe.batteryReceived.connect(self.on_fieldProbe_batteryReceived)
@@ -93,7 +94,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
         
         # Signal Generator Signal -> Slot Connections
-        self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
+        #self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
+        self.signalGenerator = SignalGenerator()
         self.signalGenerator.instrumentDetected.connect(self.on_sigGen_instrumentDetected)
         self.signalGenerator.instrumentConnected.connect(self.on_sigGen_instrumentConnected)
         self.signalGenerator.frequencySet.connect(self.on_sigGen_frequencySet)
@@ -728,7 +730,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lcdNumber_sweepProgress.display(percent)
         self.progressBar_freqSweep.setValue(percent)
         
-    def on_sigGen_modulationStateSet(self, on: bool):
+    def on_sigGen_modStateSet(self, on: bool):
         self.label_modulationState.setText('On' if on else 'Off')
         self.pushButton_modulationOn.setEnabled(not on)
         self.pushButton_modulationOff.setEnabled(on)
@@ -744,6 +746,90 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif modType == Modulation.PM.value:
             if state:
                 self.label_modulationType.setText('Phase Modulation')
+    
+    @pyqtSlot(int, bool)            
+    def on_sigGen_modCouplingSet(self, modType: int, state: bool):
+        if modType == Modulation.AM.value:
+            self.label_modulationType.setText('Amplitude Modulation')
+            if state:
+                self.label_modulationCoupling.setText('External AC')
+            else:
+                self.label_modulationCoupling.setText('External AC/DC')
+        elif modType == Modulation.FM.value:
+            self.label_modulationType.setText('Frequency Modulation')
+            if state:
+                self.label_modulationCoupling.setText('External AC')
+            else:
+                self.label_modulationCoupling.setText('External AC/DC')
+        elif modType == Modulation.PM.value:
+            self.label_modulationType.setText('Phase Modulation')
+            if state:
+                self.label_modulationCoupling.setText('External AC')
+            else:
+                self.ç.setText('External AC/DC')
+                
+    @pyqtSlot(int, bool)
+    def on_sigGen_modSourceSet(self, modType: int, state: bool):
+        if modType == Modulation.AM.value:
+            self.label_modulationType.setText('Amplitude Modulation')
+            if state:
+                self.label_modulationCoupling.setText('Internal')
+                self.label_modulationState.setHidden(False)
+            else:
+                self.label_modulationCoupling.setText('External AC')
+                self.label_modulationState.setHidden(True)
+        elif modType == Modulation.FM.value:
+            self.label_modulationType.setText('Frequency Modulation')
+            if state:
+                self.label_modulationCoupling.setText('Internal')
+                self.label_modulationState.setHidden(False)
+            else:
+                self.label_modulationCoupling.setText('External AC')
+                self.label_modulationState.setHidden(True)
+        elif modType == Modulation.PM.value:
+            self.label_modulationType.setText('Phase Modulation')
+            if state:
+                self.label_modulationCoupling.setText('Internal')
+                self.label_modulationState.setHidden(False)
+            else:
+                self.label_modulationCoupling.setText('External AC')
+                self.label_modulationState.setHidden(True)
+    
+    def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
+        self.lcdNumber_modFrequency.display(frequency)
+        if modType == Modulation.AM.value:
+            self.label_modulationType.setText('Amplitude Modulation')
+        elif modType == Modulation.FM.value:
+            self.label_modulationType.setText('Frequency Modulation')
+        elif modType == Modulation.PM.value:
+            self.label_modulationType.setText('Phase Modulation')
+            
+    def on_sigGen_modSubStateSet(self, modType: int, state: bool):
+        if state and self.modulationOn:
+            self.label_modulationState.setText('On')
+            if modType == Modulation.AM.value:
+                self.label_modulationType.setText('Amplitude Modulation')
+            elif modType == Modulation.FM.value:
+                self.label_modulationType.setText('Frequency Modulation')
+            elif modType == Modulation.PM.value:
+                self.label_modulationType.setText('Phase Modulation')
+        #TODO: What if all three are off?
+                
+    def on_sigGen_modDepthSet(self, modType: int, depth: float):
+        if modType == Modulation.AM.value:
+            self.lcdNumber_modDepth.display(depth)
+            self.label_modulationType.setText('Amplitude Modulation')
+        elif modType == Modulation.FM.value:
+            self.label_modulationType.setText('Frequency Modulation')
+        elif modType == Modulation.PM.value:
+            self.label_modulationType.setText('Phase Modulation')
+        # TODO: Hide if not AM
+        
+    def on_sigGen_amTypeSet(self, linear: bool):
+        if linear:
+            self.label_modUnit.setText('%')
+        else:
+            self.label_modUnit.setText('dBm')
         
     def on_sigGen_error(self, message: str):
         print(message)

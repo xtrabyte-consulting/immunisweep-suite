@@ -73,11 +73,233 @@ class SCPI(Enum):
     Empty = ''
     Exit = 'Exit'
 
+class SignalGenerator(QObject):
+    instrumentConnected = pyqtSignal(str)
+    instrumentDetected = pyqtSignal(bool)
+    error = pyqtSignal(str)
+    modModeSet = pyqtSignal(int, bool)
+    modStateSet = pyqtSignal(bool)
+    modSourceSet = pyqtSignal(bool)
+    modSubStateSet = pyqtSignal(int, bool)
+    modSourceSet = pyqtSignal(int, bool)
+    modFreqSet = pyqtSignal(int, float)
+    modCouplingSet = pyqtSignal(int, bool)
+    amTypeSet = pyqtSignal(bool)
+    modDepthSet = pyqtSignal(float)
+    frequencySet = pyqtSignal(float)
+    powerSet = pyqtSignal(float)
+    rfOutSet = pyqtSignal(bool)
+    sweepFinished = pyqtSignal()
+    sweepStatus = pyqtSignal(float)
+    
+    def __init__(self):
+        super().__init__()
+        self.instrument = None
+        self.is_running = False
+        self.power = 0.0
+        self.frequency = 0.0
+        self.runSweep = False
+        self.sweepType = Sweep.OFF
+        self.startFrequency = 100
+        self.stopFrequency = 6000
+        self.stepDwell = 0.1
+        self.stepCount = 100
+        self.clearing = False
+        self.detected = False
+        
+    def detect(self):
+        self.instrumentDetected.emit(True)
+        self.detected = True
+        
+    def retryDetection(self):
+        pass
+    
+    def stopDetection(self):
+        pass
+    
+    def stop(self):
+        self.is_running = False
+        
+    def connect(self):
+        self.instrumentConnected.emit('Mock Signal Generator')
+        self.is_running = True
+        self.clearing = False
+        
+    def initInstrument(self):
+        self.instrumentConnected.emit('Mock Signal Generator')
+        
+    def setFrequency(self, freq: float):
+        self.frequencySet.emit(freq)
+        
+    def setFrequency(self, freq: float, unit: str):
+        self.frequencySet.emit(freq)
+        
+    def setPower(self, pow: float):
+        self.powerSet.emit(pow)
+        
+    def setModulationType(self, mod):
+        if mod == Modulation.AM:
+            self.modSubStateSet.emit(Modulation.AM.value, True)
+            self.modSubStateSet.emit(Modulation.FM.value, False)
+            self.modSubStateSet.emit(Modulation.PM.value, False)
+        elif mod == Modulation.FM:
+            self.modSubStateSet.emit(Modulation.AM.value, False)
+            self.modSubStateSet.emit(Modulation.FM.value, True)
+            self.modSubStateSet.emit(Modulation.PM.value, False)
+        elif mod == Modulation.PM:
+            self.modSubStateSet.emit(Modulation.AM.value, False)
+            self.modSubStateSet.emit(Modulation.FM.value, False)
+            self.modSubStateSet.emit(Modulation.PM.value, True)
+            
+    def setModulationState(self, on: bool):
+        self.modStateSet.emit(on)
+        
+    def setAMSource(self, internal: bool):
+        self.modSourceSet.emit(Modulation.AM.value, internal)
+        
+    def setAMMode(self, normal: bool):
+        self.modModeSet.emit(Modulation.AM.value, normal)
+        
+    def setAMCoupling(self, dc: bool):
+        self.modCouplingSet.emit(Modulation.AM.value, dc)
+        
+    def setAMType(self, linear: bool):
+        self.amTypeSet.emit(linear)
+        
+    def setAMLinearDepth(self, percent: float):
+        self.modDepthSet.emit(percent)
+        
+    def setAMExpDepth(self, depth: float):
+        self.modDepthSet.emit(depth)
+        
+    def setAMFrequency(self, freq: float):
+        self.modFreqSet.emit(Modulation.AM.value, freq)
+        
+    def setAMState(self, on: bool):
+        self.modSubStateSet.emit(Modulation.AM.value, on)
+        
+    def setFMState(self, on: bool):
+        self.modSubStateSet.emit(Modulation.FM.value, on)
+        
+    def setFMSource(self, internal: bool):
+        self.modSourceSet.emit(Modulation.FM.value, internal)
+        
+    def setFMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
+        self.modFreqSet.emit(Modulation.FM.value, freq)
+        
+    def setFMStep(self, step: float):
+        pass
+    
+    def setFMCoupling(self, dc: bool):
+        self.modCouplingSet.emit(Modulation.FM.value, dc)
+        
+    def setPMState(self, on: bool):
+        self.modSubStateSet.emit(Modulation.PM.value, on)
+        
+    def setPMSource(self, internal: bool):
+        self.modSourceSet.emit(Modulation.PM.value, internal)
+        
+    def setPMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
+        self.modFreqSet.emit(Modulation.PM.value, freq)
+        
+    def setPMStep(self, step: float):
+        pass
+    
+    def setPMCoupling(self, dc: bool):
+        self.modCouplingSet.emit(Modulation.PM.value, dc)
+        
+    def setPMBandwidth(self, normal: bool):
+        self.modModeSet.emit(Modulation.PM.value, normal)
+        
+    def setRFOut(self, on: bool):
+        self.rfOutSet.emit(on)
+        
+    def clearQueue(self):
+        pass
+    
+    def clearErrors(self):
+        pass
+    
+    def setSweepType(self, exp: bool):
+        if exp:
+            self.sweepType = Sweep.EXPONENTIAL
+        else:
+            self.sweepType = Sweep.LINEAR
+            
+    def setStartFrequency(self, freq: float, unit: str):
+        if unit == Frequency.GHz.value:
+            freq *= 0.001
+        elif unit == Frequency.kHz.value:
+            freq *= 1000
+        elif unit == Frequency.Hz.value:
+            freq *= 1000000
+        self.startFrequency = freq
+        
+    def setStopFrequency(self, freq: float, unit: str):
+        if unit == Frequency.GHz.value:
+            freq *= 0.001
+        elif unit == Frequency.kHz.value:
+            freq *= 1000
+        elif unit == Frequency.Hz.value:
+            freq *= 1000000
+        self.stopFrequency = freq
+        
+    def setStepDwell(self, dwell: float, unit: str):
+        if unit == Time.Microsecond.value:
+            dwell *= 0.000001
+        elif unit == Time.Millisecond.value:
+            dwell *= 0.001
+        self.stepDwell = dwell
+        
+    def setStepCount(self, count: int):
+        self.stepCount = count
+        
+    def startFrequencySweep(self):
+        self.startFrequencySweep(self.startFrequency, self.stopFrequency, self.stepCount, self.stepDwell, self.sweepType == Sweep.EXPONENTIAL)
+        
+    def startFrequencySweep(self, start: float, stop: float, steps: int, dwell: float, exp: bool):
+        dwell *= 0.001
+        if exp:
+            self.sweepThread = threading.Thread(target=self.sweepExponential, args=(start, stop, steps, dwell))
+        else:
+            self.sweepThread = threading.Thread(target=self.sweepLinear, args=(start, stop, steps, dwell))
+        self.runSweep = True
+        self.sweepThread.start()
+        
+    def stopFrequencySweep(self):
+        self.runSweep = False
+        self.sweepThread.join()
+        
+    def sweepLinear(self, start, stop, steps, dwell):
+        traversal = stop - start
+        step = traversal / steps
+        current = start
+        while current <= stop and self.runSweep:
+            self.setFrequency(current)
+            current += step
+            self.sweepStatus.emit((current - start) / (stop - start) * 100)
+            time.sleep(dwell)
+        self.sweepFinished.emit()
+        
+    def log_percentage(curr_val, min_val, max_val):
+        normalized_curr = (math.log(curr_val) - math.log(min_val)) / (math.log(max_val) - math.log(min_val))
+        return normalized_curr * 100
+    
+    def sweepExponential(self, start, stop, steps, dwell):
+        ratio = pow((stop / start), 1 / (steps - 1))
+        current = start
+        while current <= stop and self.runSweep:
+            self.setFrequency(current)
+            current *= ratio
+            self.sweepStatus.emit(self.log_percentage(current, start, stop))
+            time.sleep(dwell)
+        self.sweepFinished.emit()
+    
+
 class AgilentN5181A(QObject):
     instrumentConnected = pyqtSignal(str)
     instrumentDetected = pyqtSignal(bool)
     error = pyqtSignal(str)
-    #TODO: UI For ALL These
     modModeSet = pyqtSignal(int, bool)
     modStateSet = pyqtSignal(bool)
     modSourceSet = pyqtSignal(bool)

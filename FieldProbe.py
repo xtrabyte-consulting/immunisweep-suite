@@ -1,7 +1,9 @@
+import typing
 import serial
 from serial import SerialException, SerialTimeoutException, serialutil
 import threading
 import queue
+import random
 from abc import ABC, abstractmethod
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -92,6 +94,61 @@ class CompositeDataCommand(SerialCommand):
         self.x = float(response_str[10:15])
         self.composite = float(response_str[15:20])
         return self.x, self.y, self.z, self.composite
+
+class FieldProbe(QObject):
+    fieldIntensityReceived = pyqtSignal(float, float, float, float)
+    identityReceived = pyqtSignal(str, str, str, str)
+    batteryReceived = pyqtSignal(int)
+    temperatureReceived = pyqtSignal(float) 
+    serialConnectionError = pyqtSignal(str)
+    fieldProbeError = pyqtSignal(str)
+    
+    def __init__(self):
+        super().__init__()
+        self.serial = None
+        self.is_running = False
+        self.battery_level = 100
+        self.battery_fail = False
+        self.info_interval = 10
+        self.stop_info_update = threading.Event()
+        
+    def start(self):
+        self.is_running = True
+        self.initiaizeProbe()
+        
+    def stop(self):
+        self.is_running = False
+    
+    def initiaizeProbe(self):
+        self.identityReceived.emit('Mock Probe', '1.0', '12345678', '2023-01-01')
+        
+    def beginBatTempUpdates(self):
+        self.tempBatThread = threading.Thread(target=self.updateProbeStatus)
+        self.tempBatThread.start()
+        
+    def endBatTempUpdates(self):
+        self.tempBatThread.join()
+        
+    def setUpdateInterval(self, interval: int):
+        self.probeStatusInterval = interval if interval > 5 else 5
+        
+    def updateProbeStatus(self):
+        while self.stop_info_update.is_set():
+            self.batteryReceived.emit(random.randrange(0, 100))
+            self.temperatureReceived.emit(random.randrange(40, 110))
+            self.stop_info_update.wait(self.probeStatusInterval)
+            
+    def getBatteryPercentage(self):
+        self.batteryReceived.emit(random.randrange(0, 100))
+        
+    def getTemperature(self):
+        self.temperatureReceived.emit(random.randrange(40, 110))
+        
+    def getFieldStrengthMeasurement(self):
+        self.fieldIntensityReceived.emit(random.randrange(-10, 5), random.randrange(-10, 5), random.randrange(-10, 5), random.randrange(-10, 5))
+        
+    def readWriteProbe(self):
+        pass
 
 class ETSLindgrenHI6006(QObject):
     fieldIntensityReceived = pyqtSignal(float, float, float, float)
