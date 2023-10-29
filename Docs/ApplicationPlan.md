@@ -104,6 +104,12 @@ Cleanup threads with SIGINT
 - Cleanup threads with SIGINT
 - Only start discovery threads once UI is setup
 - Other widgets
+- Sweep arguments dno't come through. 
+- Mod types don't gull change choice UI.
+- methods are not connected
+- sweep bar should start hidden
+- RF On with sweep has no states to pass.
+
 
 ## Done
 
