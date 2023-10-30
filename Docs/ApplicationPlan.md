@@ -110,6 +110,9 @@ Cleanup threads with SIGINT
 - sweep bar should start hidden
 - RF On with sweep has no states to pass.
 
+- Mod buttons aren't choosing mod.
+- Read all to get current state of UI first
+
 
 ## Done
 

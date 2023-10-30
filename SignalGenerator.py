@@ -328,8 +328,8 @@ class AgilentN5181A(QObject):
         self.runSweep = False
         self.commandLock = threading.Lock()
         self.sweepType = Sweep.OFF
-        self.startFrequency = 100
-        self.stopFrequency = 6000
+        self.startFrequency = 100.0
+        self.stopFrequency = 6000.0
         self.stepDwell = 0.1
         self.stepCount = 100
         self.clearing = False
@@ -385,9 +385,9 @@ class AgilentN5181A(QObject):
     def initInstrument(self):
         self.commandQueue.put((SCPI.Identity, ''))
     
-    def setFrequency(self, freq: float):
+    #def setFrequency(self, freq: float):
         # Assume MHz
-        self.setFrequency(self, freq, Frequency.MHz.value)
+    #    self.setFrequency(self, freq, Frequency.MHz.value)
         
     def setFrequency(self, freq: float, unit: str):
         if unit == Frequency.GHz.value:
@@ -447,13 +447,21 @@ class AgilentN5181A(QObject):
     def setAMExpDepth(self, depth: float):
         self.commandQueue.put((SCPI.AMExpDepth, f'{SCPI.AMExpDepth.value} {str(depth)}'))
         
-    def setAMFrequency(self, freq: float):
+    def setAMFrequency(self, freq: float, unit: str):
         # Range: 0.1 -> 20 MHz
-        if freq > 20000:
-            freq = 20000
-        elif freq < 0.0001:
-            freq = 0.0001
-        self.commandQueue.put((SCPI.AMFreq, f'{SCPI.AMFreq.value} {str(freq)} {Frequency.kHz.value}'))
+        if unit == Frequency.MHz.value:
+            if freq > 20:
+                freq = 20
+        elif unit == Frequency.Hz.value:
+            if freq < 0.1:
+                freq = 0.1
+        elif unit == Frequency.kHz.value:
+            if freq > 20000.0:
+                freq = 20000.0
+        else:
+            unit = Frequency.kHz.value
+            freq = 1
+        self.commandQueue.put((SCPI.AMFreq, f'{SCPI.AMFreq.value} {str(freq)} {unit}'))
         
     def setAMState(self, on: bool):
         self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.On.value if on else SCPI.Off.value}'))
@@ -466,6 +474,18 @@ class AgilentN5181A(QObject):
  
     def setFMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
         # Range: 0.1 Hz -> 2MHz
+        if unit == Frequency.MHz.value:
+            if freq > 20:
+                freq = 20
+        elif unit == Frequency.Hz.value:
+            if freq < 0.1:
+                freq = 0.1
+        elif unit == Frequency.kHz.value:
+            if freq > 20000.0:
+                freq = 20000.0
+        else:
+            unit = Frequency.kHz.value
+            freq = 1
         self.commandQueue.put((SCPI.FMFreq, f'{SCPI.FMFreq.value} {str(freq)} {unit}'))
         
     def setFMStep(self, step: float):
@@ -483,6 +503,15 @@ class AgilentN5181A(QObject):
  
     def setPMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
         # Range: 0.1 Hz -> 2MHz
+        if unit == Frequency.MHz.value:
+            if freq > 20:
+                freq = 20
+        elif unit == Frequency.Hz.value:
+            if freq < 0.1:
+                freq = 0.1
+        else:
+            unit = Frequency.kHz.value
+            freq = 1
         self.commandQueue.put((SCPI.PMFreq, f'{SCPI.PMFreq.value} {str(freq)} {unit}'))
         
     def setPMStep(self, step: float):
@@ -518,24 +547,30 @@ class AgilentN5181A(QObject):
             self.sweepType = Sweep.LINEAR
             
     def setStartFrequency(self, freq: float, unit: str):
-        # Convert to MHz
+        # Convert to kHz
         if unit == Frequency.GHz.value:
-            freq *= 0.001
-        elif unit == Frequency.kHz.value:
+            freq *= 1000000
+        elif unit == Frequency.MHz.value:
             freq *= 1000
         elif unit == Frequency.Hz.value:
-            freq *= 1000000
+            freq /= 1000
         self.startFrequency = freq
         
     def setStopFrequency(self, freq: float, unit: str):
-        # Convert to MHz
+        # Convert to kHz
         if unit == Frequency.GHz.value:
-            freq *= 0.001
-        elif unit == Frequency.kHz.value:
+            freq *= 1000000
+        elif unit == Frequency.MHz.value:
             freq *= 1000
         elif unit == Frequency.Hz.value:
-            freq *= 1000000
+            freq /= 1000
         self.stopFrequency = freq
+    
+    def getDefaultLogarithmicStepCount(self) -> int:
+        steps = math.log(self.stopFrequency / self.startFrequency) / math.log(1.01)
+        print(f'StartFreq: {self.startFrequency}, StopFreq: {self.stopFrequency}, steps: {steps}')
+        self.stepCount = int(steps)
+        return self.stepCount
     
     def setStepDwell(self, dwell: float, unit: str):
         # Convert to Sec
@@ -546,17 +581,14 @@ class AgilentN5181A(QObject):
         self.stepDwell = dwell
         
     def setStepCount(self, count: int):
-        self.stepCount = count
-        
-    def startFrequencySweep(self):
-        self.startFrequencySweep(self.startFrequency, self.stopFrequency, self.stepCount, self.stepDwell, self.sweepType == Sweep.EXPONENTIAL)    
+        self.stepCount = count  
     
-    def startFrequencySweep(self, start: float, stop: float, steps: int, dwell: float, exp: bool):
-        dwell *= 0.001
-        if exp:
-            self.sweepThread = threading.Thread(target=self.sweepExponential, args=(start, stop, steps, dwell))
+    def startFrequencySweep(self):
+        dwell = self.stepDwell * 0.001
+        if self.sweepType == Sweep.EXPONENTIAL:
+            self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.stepCount, dwell))
         else:
-            self.sweepThread = threading.Thread(target=self.sweepLinear, args=(start, stop, steps, dwell))
+            self.sweepThread = threading.Thread(target=self.sweepLinear, args=(self.startFrequency, self.stopFrequency, self.stepCount, dwell))
         self.runSweep = True
         self.sweepThread.start()
         
@@ -569,22 +601,23 @@ class AgilentN5181A(QObject):
         step = traversal / steps
         current = start
         while current <= stop and self.runSweep:
-            self.setFrequency(current)
+            self.setFrequency(current, Frequency.kHz.value)
             current += step
             self.sweepStatus.emit((current - start) / (stop - start) * 100)
             time.sleep(dwell)
         self.sweepFinished.emit()
     
 
-    def log_percentage(curr_val, min_val, max_val):
+    def log_percentage(self, curr_val, min_val, max_val):
         normalized_curr = (math.log(curr_val) - math.log(min_val)) / (math.log(max_val) - math.log(min_val))
         return normalized_curr * 100
     
     def sweepExponential(self, start, stop, steps, dwell):
         ratio = pow((stop / start), 1 / (steps - 1))
         current = start
+        print(f'Start: {start}, Ratio: {ratio}, Stop: {stop}')
         while current <= stop and self.runSweep:
-            self.setFrequency(current)
+            self.setFrequency(current, Frequency.kHz.value)
             current *= ratio
             self.sweepStatus.emit(self.log_percentage(current, start, stop))
             time.sleep(dwell)

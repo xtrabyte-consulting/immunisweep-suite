@@ -742,7 +742,7 @@
            <item row="0" column="1">
             <widget class="QLabel" name="label_temperature">
              <property name="text">
-              <string>40 F</string>
+              <string>--</string>
              </property>
             </widget>
            </item>
@@ -756,7 +756,7 @@
            <item row="2" column="1">
             <widget class="QLabel" name="label_chargeLevel">
              <property name="text">
-              <string>30 sam/sec</string>
+              <string>--</string>
              </property>
             </widget>
            </item>
@@ -780,7 +780,7 @@
            <item row="1" column="1">
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>95 %</string>
+              <string>--</string>
              </property>
             </widget>
            </item>
@@ -1200,6 +1200,22 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>13</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="lineWidth">
+            <number>1</number>
+           </property>
+           <property name="digitCount">
+            <number>9</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Filled</enum>
+           </property>
           </widget>
          </item>
          <item>
@@ -1216,7 +1232,7 @@
             </font>
            </property>
            <property name="text">
-            <string>MHz</string>
+            <string>kHz</string>
            </property>
           </widget>
          </item>
