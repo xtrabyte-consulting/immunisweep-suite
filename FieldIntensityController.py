@@ -1,14 +1,9 @@
+from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-
-from PyQt5.QtGui import QPainter, QBitmap, QPolygon, QPen, QBrush, QColor
-from PyQt5.QtCore import Qt
-
-from pyqtgraph import PlotWidget, plot
-import pyqtgraph as pg
+from qt_material import apply_stylesheet
 
 from MainWindow import Ui_MainWindow
 from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency, SignalGenerator
@@ -83,8 +78,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle('XtraByte Field Controller')
         
         # Field Probe Signal -> Slot Connections
-        self.fieldProbe = ETSLindgrenHI6006('COM5')
-        # self.fieldProbe = FieldProbe()
+        #self.fieldProbe = ETSLindgrenHI6006('COM5')
+        self.fieldProbe = FieldProbe()
         self.fieldProbe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.fieldProbe.identityReceived.connect(self.on_fieldProbe_identityReceived)
         self.fieldProbe.batteryReceived.connect(self.on_fieldProbe_batteryReceived)
@@ -93,8 +88,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
         
         # Signal Generator Signal -> Slot Connections
-        self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
-        #self.signalGenerator = SignalGenerator()
+        #self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
+        self.signalGenerator = SignalGenerator()
         self.signalGenerator.instrumentDetected.connect(self.on_sigGen_instrumentDetected)
         self.signalGenerator.instrumentConnected.connect(self.on_sigGen_instrumentConnected)
         self.signalGenerator.frequencySet.connect(self.on_sigGen_frequencySet)
@@ -186,8 +181,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         # Other UI Setup
         self.pushButton_pauseSweep.setEnabled(False)
-        self.label_rfOutState.setPixmap(QPixmap('broadcast-off.png'))
-        self.label_rfOutState.setText('RF Off')
+        pixmap = QPixmap('broadcast-off.png')
+        scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_rfOutState.setPixmap(scaledPixmap)
+        # self.label_rfOutState.setText('RF Off') TODO: Add RF State Label
         self.progressBar_freqSweep.setValue(0.0)
         self.progressBar_freqSweep.setHidden(True)
         self.radioButton_pidControl.setChecked(True)
@@ -655,9 +652,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str):
         self.pushButton_detectFieldProbe.hide()
-        self.label_fieldProbe.setPixmap(QPixmap('HI-6006.png'))
-        self.label_fieldProbe.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial)
-        self.fieldProbe.getEField()
+        pixmap = QPixmap('HI-6006.png')
+        scaledPixmap = pixmap.scaled(275, 150, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_fieldProbe.setPixmap(scaledPixmap)
+        #self.label_fieldProbe.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial) TODO: Add Model and Serial
+        self.fieldProbe.getFieldStrengthMeasurement()
       
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
         self.measuredFieldIntensity = composite
@@ -703,7 +702,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print('RF On')
             self.pushButton_rfOn.setEnabled(False)
             self.pushButton_rfOff.setEnabled(True)
-            self.label_rfOutState.setPixmap(QPixmap('broadcast-on.png'))
+            pixmap = QPixmap('broadcast-on.png')
+            scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+            self.label_rfOutState.setPixmap(scaledPixmap)
             self.rfOutOn = True
             if self.sweepOn:
                 self.signalGenerator.startFrequencySweep()
@@ -712,7 +713,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print("RF Off")
             self.pushButton_rfOn.setEnabled(True)
             self.pushButton_rfOff.setEnabled(False)
-            self.label_rfOutState.setPixmap(QPixmap('broadcast-off.png'))
+            pixmap = QPixmap('broadcast-off.png')
+            scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+            self.label_rfOutState.setPixmap(scaledPixmap)
             self.rfOutOn = False
             if self.sweepOn and self.sweepRunning:
                 self.signalGenerator.stopFrequencySweep()
@@ -731,8 +734,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_instrumentConnected(self, message: str):
         self.pushButton_detectSigGen.hide()
-        self.label_sigGen.setText(''.join(message.split(',')))
-        self.label_sigGen.setPixmap(QPixmap('AgilentN5181A.png'))
+        # self.label_sigGen.setText(''.join(message.split(','))) TODO: Add Model and Serial
+        pixmap = QPixmap('AgilentN5181A.png')
+        scaledPixmap = pixmap.scaled(275, 150, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_sigGen.setPixmap(scaledPixmap)
         
     def on_sigGen_frequencySet(self, frequency: float):
         if frequency < 1000000.0:
@@ -770,18 +775,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modulationOn = on
         
     def on_sigGen_modModeSet(self, modType: int, state: bool):
-        if modType == Modulation.AM.value:
-            if state:
-                self.label_modulationType.setText('Amplitude Modulation')
-                self.label_modulationVariable.setText('Depth')
-        elif modType == Modulation.FM.value:
-            if state:
-                self.label_modulationType.setText('Frequency Modulation')
-                self.label_modulationVariable.setText('Deviation')
-        elif modType == Modulation.PM.value:
-            if state:
-                self.label_modulationType.setText('Phase Modulation')
-                self.label_modulationVariable.setText('Deviation')
+        '''Feedback is the same for all modulation modes'''
+        pass
     
     @pyqtSlot(int, bool)            
     def on_sigGen_modCouplingSet(self, modType: int, state: bool):
@@ -806,24 +801,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 
     @pyqtSlot(int, bool)
     def on_sigGen_modSourceSet(self, modType: int, state: bool):
-        if modType == Modulation.AM.value:
-            self.label_modulationType.setText('Amplitude Modulation')
-            if state:
-                self.label_modulationCoupling.setText('Internal')
-                self.label_modulationState.setHidden(False)
-            else:
-                self.label_modulationCoupling.setText('External AC')
-                self.label_modulationState.setHidden(True)
-        elif modType == Modulation.FM.value:
-            self.label_modulationType.setText('Frequency Modulation')
-            if state:
-                self.label_modulationCoupling.setText('Internal')
-                self.label_modulationState.setHidden(False)
-            else:
-                self.label_modulationCoupling.setText('External AC')
-                self.label_modulationState.setHidden(True)
-        elif modType == Modulation.PM.value:
-            self.label_modulationType.setText('Phase Modulation')
+        if modType == self.modulationType.value:
             if state:
                 self.label_modulationCoupling.setText('Internal')
                 self.label_modulationState.setHidden(False)
@@ -832,14 +810,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.label_modulationState.setHidden(True)
     
     def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
-        frequency /= 1000.0
-        self.lcdNumber_modFrequency.display(frequency)
-        if modType == Modulation.AM.value:
-            self.label_modulationType.setText('Amplitude Modulation')
-        elif modType == Modulation.FM.value:
-            self.label_modulationType.setText('Frequency Modulation')
-        elif modType == Modulation.PM.value:
-            self.label_modulationType.setText('Phase Modulation')
+        if modType == self.modulationType.value:
+            frequency /= 1000.0
+            self.lcdNumber_modFrequency.display(frequency)
             
     def on_sigGen_modSubStateSet(self, modType: int, state: bool):
         if state:
@@ -847,11 +820,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.label_modulationState.setText('On')
             if modType == Modulation.AM.value:
                 self.label_modulationType.setText('Amplitude Modulation')
+                self.modulationType = Modulation.AM
             elif modType == Modulation.FM.value:
                 self.label_modulationType.setText('Frequency Modulation')
+                self.modulationType = Modulation.FM
             elif modType == Modulation.PM.value:
                 self.label_modulationType.setText('Phase Modulation')
-        #TODO: What if all three are off?
+                self.modulationType = Modulation.PM
                 
     def on_sigGen_modDepthSet(self, depth: float):
         self.lcdNumber_modValueOut.display(depth)
@@ -936,20 +911,8 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     #app.setWindowIcon(QtGui.QIcon(':/icons/field_controller.ico'))
     window = MainWindow()
+    
+    apply_stylesheet(app, theme='dark_cyan.xml')
     window.show()
     #app.aboutToQuit(window.killThreads())
     sys.exit(app.exec_())
-    
-    
-#self.freqStartBox.valueChanged.connect(self.on_freqStartBox_valueChanged)
-# TODO: self.freqStartBox.setValue(self.startFrequency) & all others
-#self.freqStopBox.valueChanged.connect(self.on_freqStopBox_valueChanged)
-#self.stepDwellBox.valueChanged.connect(self.on_stepDwellBox_valueChanged)
-#self.stepCountBox.valueChanged.connect(self.on_stepCountBox_valueChanged)
-#self.amDepthBox.valueChanged.connect(self.on_amDepthBox_valueChanged)
-#self.amFreqBox.valueChanged.connect(self.on_amFreqBox_valueChanged)
-#self.setFieldIntensityBox.valueChanged.connect(self.on_setFieldIntensityBox_valueChanged)
-#self.startButton.pressed.connect(self.on_startButton_pressed)
-#self.linearSweepButton.toggled.connect(self.on_linearSweepButton_toggled)
-#self.expSweepButton.toggled.connect(self.on_expSweepButton_toggled)
-#self.sweepOffButton.toggled.connect(self.on_sweepOffButton_toggled)

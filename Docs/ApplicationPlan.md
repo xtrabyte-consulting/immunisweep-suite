@@ -98,7 +98,6 @@ Cleanup threads with SIGINT
 
 - Plots not showing
 - ?? Not all radio buttons disabled when its time (FM mod mode buttons)
-- Sweep still not implemented.
 - Signal modulation UI unresponsive.
 - Pow and Freq run 3 times...
 - Cleanup threads with SIGINT
@@ -110,12 +109,12 @@ Cleanup threads with SIGINT
 - sweep bar should start hidden
 - RF On with sweep has no states to pass.
 
-- Mod buttons aren't choosing mod.
 - Read all to get current state of UI first
-
 
 ## Done
 
+- Mod buttons aren't choosing mod.
+- Sweep still not implemented.
 - PM button not togglable.
 - freq not heard
 - Modulation label buttons are off (, Mode doesn't chnage % - dBm)

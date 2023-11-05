@@ -650,15 +650,15 @@ class AgilentN5181A(QObject):
                 if commandType == SCPI.Identity: 
                     self.instrumentConnected.emit(state)
                 elif commandType == SCPI.RFOut:
-                    self.rfOutSet.emit(state == '1')
+                    self.rfOutSet.emit(bool(int(state)))
                 elif commandType == SCPI.Power:
                     self.powerSet.emit(float(state))
                 elif commandType == SCPI.Frequency:
                     self.frequencySet.emit(float(state))
                 elif commandType == SCPI.ModulationState:
-                    self.modStateSet.emit(state == '1')
+                    self.modStateSet.emit(bool(int(state)))
                 elif commandType == SCPI.AMState:
-                    self.modSubStateSet.emit(Modulation.AM.value, state == '1')
+                    self.modSubStateSet.emit(Modulation.AM.value, bool(int(state)))
                 elif commandType == SCPI.AMType:
                     self.amTypeSet.emit(SCPI.Linear.value == state)
                 elif commandType == SCPI.AMMode:
@@ -674,7 +674,7 @@ class AgilentN5181A(QObject):
                 elif commandType == SCPI.AMFreq:
                     self.modFreqSet.emit(Modulation.AM.value, float(state))
                 elif commandType == SCPI.FMState:
-                    self.modSubStateSet.emit(Modulation.FM.value, state == '1')
+                    self.modSubStateSet.emit(Modulation.FM.value, bool(int(state)))
                 elif commandType == SCPI.FMSource:
                     self.modSourceSet.emit(Modulation.FM.value, SCPI.Internal.value == state)
                 elif commandType == SCPI.FMCoupling:
@@ -682,7 +682,7 @@ class AgilentN5181A(QObject):
                 elif commandType == SCPI.FMFreq:
                     self.modFreqSet.emit(Modulation.FM.value, float(state))
                 elif commandType == SCPI.PMState:
-                    self.modSubStateSet.emit(Modulation.PM.value, state == '1')
+                    self.modSubStateSet.emit(Modulation.PM.value, bool(int(state)))
                 elif commandType == SCPI.PMBand:
                     self.modModeSet.emit(Modulation.PM.value, SCPI.Normal.value == state)
                 elif commandType == SCPI.PMSource:

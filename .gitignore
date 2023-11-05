@@ -27,3 +27,4 @@ venv/
 
 # Database
 *.DS_Store
+.DS_Store
