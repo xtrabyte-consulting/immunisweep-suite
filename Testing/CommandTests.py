@@ -18,7 +18,7 @@ class CommandTest(QObject):
         self.agilent.modFreqSet.connect(self.on_mod_freq_set)
         self.agilent.modCouplingSet.connect(self.on_mod_coupling_set)
         self.agilent.amTypeSet.connect(self.on_am_type_set)
-        self.agilent.amDepthSet.connect(self.on_am_depth_set)
+        self.agilent.modDepthSet.connect(self.on_am_depth_set)
         self.agilent.frequencySet.connect(self.on_frequency_set)
         self.agilent.powerSet.connect(self.on_power_set)
         self.agilent.rfOutSet.connect(self.on_rf_out_set)

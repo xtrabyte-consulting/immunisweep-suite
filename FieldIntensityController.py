@@ -107,6 +107,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signalGenerator.modSubStateSet.connect(self.on_sigGen_modSubStateSet)
         self.signalGenerator.modDepthSet.connect(self.on_sigGen_modDepthSet)
         
+        # Initialize State
+        self.powerControl = True
+        self.sweepRunning = False
+        self.ouputOn = False
+        self.modulationOn = False
+        self.modulationType = Modulation.AM
+        self.internalModulation = True
+        self.measuredFieldIntensity = 0.0
+        self.desiredFieldIntensity = 0.0
+        self.currentOutputPower = 0.0
+        
         ### UI Input and Control Signal -> Slot Connections
         # Device detection
         self.pushButton_detectSigGen.pressed.connect(self.on_pushButton_detectSigGen_pressed)
@@ -185,7 +196,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_rfOutState.setPixmap(scaledPixmap)
         # self.label_rfOutState.setText('RF Off') TODO: Add RF State Label
-        self.progressBar_freqSweep.setValue(0.0)
+        pixmap = QPixmap('thermometer.png')
+        scaledPixmap = pixmap.scaled(48, 48, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_temperatureTitle.setPixmap(scaledPixmap)
+        pixmap = QPixmap('battery.png')
+        scaledPixmap = pixmap.scaled(48, 48, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_chargeTitle.setPixmap(scaledPixmap)
+        self.progressBar_freqSweep.setValue(0)
         self.progressBar_freqSweep.setHidden(True)
         self.radioButton_pidControl.setChecked(True)
         self.radioButton_sweepOff.setChecked(True)
@@ -193,18 +210,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.radioButton_intSource.setChecked(True)
         self.radioButton_acCoupling.setChecked(True)
         self.radioButton_basicMode.setChecked(True)
-        
-        
-        # Initialize State
-        self.powerControl = True
-        self.sweepRunning = False
-        self.ouputOn = False
-        self.modulationOn = False
-        self.modulationType = Modulation.AM
-        self.internalModulation = True
-        self.measuredFiedldIntensity = 0.0
-        self.desiredFieldIntensity = 0.0
-        self.currentOutputPower = 0.0
         
         self.startDeviceDetection()
         
@@ -596,26 +601,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def toggleModControlTypeUI(self, modType: Modulation):
         self.radioButton_intSource.setChecked(True)
         if modType == Modulation.AM:
-            self.label_couplingTypeTitle.setText('AM Type')
+            self.label_couplingTypeTitle.setText('Mode')
             self.radioButton_acCoupling.setText('Linear')
             self.radioButton_acCoupling.setEnabled(True)
             self.radioButton_acCoupling.setChecked(True)
-            self.radioButton_acdcCoupling.setText('Exponential')
+            self.radioButton_acdcCoupling.setText('Exp')
             self.radioButton_acdcCoupling.setEnabled(True)
-            self.label_ampmMode.setText('Operation Mode')
-            self.self.radioButton_deepHighMode.setHidden(False)
+            self.label_ampmMode.setText('Am Type')
+            self.radioButton_deepHighMode.setHidden(False)
             self.radioButton_deepHighMode.setText('Deep')
             self.radioButton_basicMode.setEnabled(True)
             self.radioButton_deepHighMode.setEnabled(True)
             self.radioButton_basicMode.setChecked(True)
-            self.label_amDepthFPMDev.setText('Peak Depth')
+            self.label_amDepthFPMDev.setText('Depth')
             self.comboBox_depthDevUnit.clear()
             self.comboBox_depthDevUnit.addItems(['%', 'dBm'])
             self.comboBox_depthDevUnit.setCurrentText('%')
         elif modType == Modulation.FM:
             self.radioButton_deepHighMode.setText('High')
-            self.label_amDepthFPMDev.setText('Peak Deviation')
-            self.label_couplingTypeTitle.setText('Exteneral Coupling')
+            self.label_amDepthFPMDev.setText('Deviation')
+            self.label_couplingTypeTitle.setText('Mode')
             self.radioButton_acCoupling.setText('AC Only')
             self.radioButton_acdcCoupling.setText('AC/DC')
             self.radioButton_acCoupling.setEnabled(False)
@@ -623,27 +628,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.comboBox_depthDevUnit.clear()
             self.comboBox_depthDevUnit.addItems([Frequency.Hz.value, Frequency.kHz.value, Frequency.MHz.value])
             self.comboBox_depthDevUnit.setCurrentText(Frequency.kHz.value)
-            self.label_ampmMode.setText('Operation Mode')
-            self.self.radioButton_deepHighMode.setHidden(True)
+            self.label_ampmMode.setText('Coupling')
+            #self.radioButton_deepHighMode.setHidden(True)
             self.radioButton_basicMode.setEnabled(False)
             self.radioButton_deepHighMode.setEnabled(False)
         elif modType == Modulation.PM:
-            self.label_amDepthFPMDev.setText('Peak Deviation')
-            self.label_couplingTypeTitle.setText('Exteneral Coupling')
+            self.label_amDepthFPMDev.setText('Deviation')
+            self.label_couplingTypeTitle.setText('Mode')
             self.radioButton_acCoupling.setText('AC Only')
             self.radioButton_acdcCoupling.setText('AC/DC')
             self.radioButton_acCoupling.setEnabled(False)
             self.radioButton_acdcCoupling.setEnabled(False)
             self.comboBox_depthDevUnit.clear()
-            self.comboBox_depthDevUnit.addItems(['Rad', 'Deg', 'PiRad'])
+            self.comboBox_depthDevUnit.addItems(['Rad', 'Deg'])
             self.comboBox_depthDevUnit.setCurrentText('Deg')
-            self.label_ampmMode.setText('Bandwidth Mode')
+            self.label_ampmMode.setText('Coupling')
             self.radioButton_deepHighMode.setText('High')
-            self.self.radioButton_deepHighMode.setHidden(False)
+            self.radioButton_deepHighMode.setHidden(False)
             self.radioButton_basicMode.setEnabled(True)
             self.radioButton_basicMode.setChecked(True)
-            self.radioButton_deepHighMode.setEnabled(True)
-            self.label_amDepthFPMDev.setText('Phase Deviation')        
+            self.radioButton_deepHighMode.setEnabled(True)       
         
     def displayAlert(self, text):
         self.alert = QMessageBox()
@@ -653,9 +657,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str):
         self.pushButton_detectFieldProbe.hide()
         pixmap = QPixmap('HI-6006.png')
-        scaledPixmap = pixmap.scaled(275, 150, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        scaledPixmap = pixmap.scaled(275, 128, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_fieldProbe.setPixmap(scaledPixmap)
-        #self.label_fieldProbe.setText('ETS Lindgren Field Probe HI-' + model + ' ' + serial) TODO: Add Model and Serial
+        self.label_fieldProbeName.setText('ETS Lindgren HI-' + model + ' ' + serial)
         self.fieldProbe.getFieldStrengthMeasurement()
       
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
@@ -734,9 +738,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_instrumentConnected(self, message: str):
         self.pushButton_detectSigGen.hide()
-        # self.label_sigGen.setText(''.join(message.split(','))) TODO: Add Model and Serial
+        self.label_sigGenName.setText(''.join(message.split(',')))
         pixmap = QPixmap('AgilentN5181A.png')
-        scaledPixmap = pixmap.scaled(275, 150, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        scaledPixmap = pixmap.scaled(275, 128, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_sigGen.setPixmap(scaledPixmap)
         
     def on_sigGen_frequencySet(self, frequency: float):
@@ -766,7 +770,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_sigGen_sweepStatus(self, percent: float):
         self.lcdNumber_sweepProgress.display(percent)
-        self.progressBar_freqSweep.setValue(percent / 100)
+        self.progressBar_freqSweep.setValue(int(percent))
         
     def on_sigGen_modStateSet(self, on: bool):
         self.label_modulationState.setText('On' if on else 'Off')

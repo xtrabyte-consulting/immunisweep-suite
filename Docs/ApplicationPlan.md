@@ -126,3 +126,14 @@ Cleanup threads with SIGINT
 - Internal, External Mod Coupling/Source
 - All radio buttons don't intiate with one picked
 - Device pictures needed.
+
+
+<a target="_blank" href="https://icons8.com/icon/9W5RPRy9aBBQ/thermometer">Thermometer</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
+<a target="_blank" href="https://icons8.com/icon/q08BODJHMGe1/thermometer">Thermometer</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
+<a target="_blank" href="https://icons8.com/icon/12997/temperature">Thermometer</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
+<a target="_blank" href="https://icons8.com/icon/13617/battery-level">Battery Level</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
+<a target="_blank" href="https://icons8.com/icon/lFtDGciFcpiw/medium-charging-battery">Medium Charging Battery</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>

@@ -120,7 +120,7 @@ class FieldProbe(QObject):
         self.is_running = False
     
     def initiaizeProbe(self):
-        self.identityReceived.emit('Mock Probe', '1.0', '12345678', '2023-01-01')
+        self.identityReceived.emit('6006', '', '', '')
         
     def beginBatTempUpdates(self):
         self.tempBatThread = threading.Thread(target=self.updateProbeStatus)

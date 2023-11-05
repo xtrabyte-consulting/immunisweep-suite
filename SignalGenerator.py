@@ -121,12 +121,12 @@ class SignalGenerator(QObject):
         self.is_running = False
         
     def connect(self):
-        self.instrumentConnected.emit('Mock Signal Generator')
+        self.instrumentConnected.emit('Agilent N5181A')
         self.is_running = True
         self.clearing = False
         
     def initInstrument(self):
-        self.instrumentConnected.emit('Mock Signal Generator')
+        self.instrumentConnected.emit('Agilent N5181A')
         
     def setFrequency(self, freq: float):
         self.frequencySet.emit(freq)
