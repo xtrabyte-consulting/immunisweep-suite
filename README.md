@@ -1,4 +1,4 @@
-# Signal Gnerator Desktop Auto-Sweep and Power Controller
+# Signal Generator Desktop Auto-Frequency Sweep and Power Controller
 
 ## Desktop application that utilizes the PyQt framework and custom SCPI and serial drivers to run linear and exponential frequency sweeps on an extra-wide-band (2kHz - 6GHz) RF Signal Generator while keeping the electromagnetic field at a constant amplitude via closed-loop control from field probe feedback input
 
