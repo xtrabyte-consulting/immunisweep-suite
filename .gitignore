@@ -12,7 +12,7 @@ __pycache__/
 #*.ui
 
 # Virtual environment
-venv/
+efield_env/
 
 # IDE files
 .vscode/

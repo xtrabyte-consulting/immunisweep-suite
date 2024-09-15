@@ -409,6 +409,9 @@ class AgilentN5181A(QObject):
         
     def setPower(self, pow: float):
         print(f'Setting Power: {str(pow)}')
+        if pow > 9.9:
+            pow = 9.9
+            self.error.emit("Power above amplifier maximum input. Setting to 9.9 dBm")
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
     def setModulationType(self, mod):
