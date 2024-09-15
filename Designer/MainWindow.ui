@@ -577,6 +577,37 @@ Frequency (High) = 6.0 GHz</string>
          </property>
         </widget>
        </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="spinBox_stopFreq">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>126</width>
+           <height>26</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>204</width>
+           <height>26</height>
+          </size>
+         </property>
+         <property name="minimum">
+          <double>0.250000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>6000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>300.000000000000000</double>
+         </property>
+        </widget>
+       </item>
        <item row="9" column="0">
         <widget class="QLabel" name="label_amDepthFPMDev">
          <property name="sizePolicy">
@@ -659,6 +690,37 @@ Frequency (High) = 6.0 GHz</string>
          </property>
         </widget>
        </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="spinBox_startFreq">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>126</width>
+           <height>26</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>204</width>
+           <height>26</height>
+          </size>
+         </property>
+         <property name="minimum">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>6000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>30.000000000000000</double>
+         </property>
+        </widget>
+       </item>
        <item row="9" column="1">
         <widget class="QDoubleSpinBox" name="spinBox_modDepth">
          <property name="sizePolicy">
@@ -684,6 +746,13 @@ Frequency (High) = 6.0 GHz</string>
          </property>
          <property name="value">
           <double>80.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="1">
+        <widget class="QLabel" name="label_antennaStats">
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>
@@ -730,6 +799,11 @@ Frequency (High) = 6.0 GHz</string>
        </item>
        <item row="13" column="1">
         <widget class="QComboBox" name="comboBox_amplifier">
+         <item>
+          <property name="text">
+           <string>--Please Select--</string>
+          </property>
+         </item>
          <item>
           <property name="text">
            <string>AR 25A250AMB</string>
@@ -823,6 +897,11 @@ Frequency (High) = 6.0 GHz</string>
         <widget class="QComboBox" name="comboBox_antenna">
          <item>
           <property name="text">
+           <string>--Please Select--</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>ETS 3143B</string>
           </property>
          </item>
@@ -891,18 +970,6 @@ Frequency (High) = 6.0 GHz</string>
          </item>
         </layout>
        </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="label_validSettings">
-         <property name="font">
-          <font>
-           <pointsize>14</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Valid</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_startFreq">
          <property name="sizePolicy">
@@ -956,79 +1023,22 @@ Frequency (High) = 6.0 GHz</string>
        <item row="14" column="1">
         <widget class="QLabel" name="label_amplifierStats">
          <property name="text">
-          <string>Min Freq: 1 MHz
-Max Freq: 300 MHz
-Power In: 0 dBm</string>
+          <string/>
          </property>
         </widget>
        </item>
-       <item row="16" column="1">
-        <widget class="QLabel" name="label_antennaStats">
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_validSettings">
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color: rgb(0, 255, 127)</string>
+         </property>
          <property name="text">
-          <string>Min Freq: 30 MHz
-Max Freq: 3000 MHz</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QDoubleSpinBox" name="spinBox_stopFreq">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>126</width>
-           <height>26</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>204</width>
-           <height>26</height>
-          </size>
-         </property>
-         <property name="minimum">
-          <double>0.250000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>6000.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>300.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="spinBox_startFreq">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>126</width>
-           <height>26</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>204</width>
-           <height>26</height>
-          </size>
-         </property>
-         <property name="minimum">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>6000.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>30.000000000000000</double>
+          <string>Valid</string>
          </property>
         </widget>
        </item>
