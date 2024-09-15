@@ -185,7 +185,7 @@ class ETSLindgrenHI6006(QObject):
     def start(self):
         self.is_running = True
         try:
-            self.serial = serial.Serial(self.serial_port, baudrate=9600, bytesize=serial.SEVENBITS, parity=serial.PARITY_ODD, stopbits=1, timeout=5)
+            self.serial = serial.Serial(self.serial_port, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=1, timeout=5)
             self.probe_thread = threading.Thread(target=self.readWriteProbe)
             self.probe_thread.start()
             self.initiaizeProbe()

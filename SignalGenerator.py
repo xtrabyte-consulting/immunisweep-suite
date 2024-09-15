@@ -555,7 +555,7 @@ class AgilentN5181A(QObject):
         self.sweepTerm = term  
     
     def startFrequencySweep(self):
-        self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.stepCount, dwell))
+        self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.stepCount, self.stepDwell))
         self.runSweep = True
         self.sweepThread.start()
         

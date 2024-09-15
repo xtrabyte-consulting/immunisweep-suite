@@ -13,7 +13,7 @@ from Plots import PowerPlot
 import os
 import sys
 
-import os
+import signal
 from PyQt5.QtCore import QResource
 
 CURRENT_DIR = os.path.curdir
@@ -697,7 +697,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progressBar_freqSweep.setValue(int(percent))
         
     def on_sigGen_modStateSet(self, on: bool):
-        self.label_modulationState.setText('On' if on else 'Off')
         self.pushButton_modulationOn.setEnabled(not on)
         self.pushButton_modulationOff.setEnabled(on)
         self.modulationOn = on
@@ -843,4 +842,5 @@ if __name__ == '__main__':
     apply_stylesheet(app, theme='dark_cyan.xml')
     window.show()
     #app.aboutToQuit(window.killThreads())
+    signal.signal(signal.SIGINT, window.closeEvent)
     sys.exit(app.exec_())
