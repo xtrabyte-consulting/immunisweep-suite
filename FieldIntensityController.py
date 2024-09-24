@@ -97,7 +97,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle('XtraByte Field Controller')
         
         # Field Probe Signal -> Slot Connections
-        self.fieldProbe = ETSLindgrenHI6006('COM5')
+        self.fieldProbe = ETSLindgrenHI6006()
         #self.fieldProbe = FieldProbe()
         self.fieldProbe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.fieldProbe.identityReceived.connect(self.on_fieldProbe_identityReceived)
@@ -198,11 +198,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.alerted = False
         self.signalGenerator.detect()
         self.fieldProbe.start()
-    
-    def killThreads(self):
-        self.fieldProbe.stop()
-        #self.signalGenerator.stopDetection()
-        self.signalGenerator.stop()
         
     def on_pushButton_detectSigGen_pressed(self):
         self.signalGenerator.detect()
@@ -243,30 +238,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.equipmentLimits.setMinFrequency(1000.0)
             self.equipmentLimits.setMaxFrequency(18000.0)
             self.label_antennaStats.setText('Min Freq: 1 GHz\nMax Freq: 18 GHz')
-        
-    def on_radioButton_powerControl_toggled(self):
-        sender = self.sender()
-        if sender.isChecked():
-            if sender == self.radioButton_pidControl:
-                self.powerControl = True
-                self.label_desiredFieldTitle.setText("Target RMS Field Strength")
-                self.label_strengthUnit.setText("V/m")
-                self.spinBox_targetStrength.setValue(self.measuredFieldIntensity)
-                self.desiredFieldIntensity = self.measuredFieldIntensity
-                self.pidController.clear()
-                self.pidController.setMeasuredValue(self.measuredFieldIntensity)
-                self.pidController.setTargetValue(self.desiredFieldIntensity)
-            elif sender == self.radioButton_staticPower:
-                self.powerControl = False
-                self.label_desiredFieldTitle.setText("Output Power")
-                self.label_strengthUnit.setText("dBm")
-                self.spinBox_targetStrength.setValue(self.currentOutputPower)
-                self.pidController.clear()
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
         self.pidController.setTargetValue(float(target))
-
     
     def on_pushButton_rfState_pressed(self):
         sender = self.sender()
@@ -571,14 +546,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.alert.setText(text)
         self.alert.exec()
     
-    def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str):
+    @pyqtSlot(str, str, str, str)
+    def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str, calibration: str):
         self.pushButton_detectFieldProbe.hide()
         pixmap = QPixmap('HI-6006.png')
         scaledPixmap = pixmap.scaled(275, 128, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_fieldProbe.setPixmap(scaledPixmap)
-        self.label_fieldProbeName.setText('ETS Lindgren HI-' + model + ' ' + serial)
+        self.label_fieldProbeName.setText('ETS Lindgren ' + model + ' Serial: ' + serial)
         self.fieldProbe.getFieldStrengthMeasurement()
-      
+        self.fieldProbe.beginBatTempUpdates(2.0)
+
+    @pyqtSlot(float, float, float, float)
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
         self.measuredFieldIntensity = composite
         self.updateFieldStrengthUI(x, y, z, composite)
@@ -662,7 +640,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_instrumentConnected(self, message: str):
         self.pushButton_detectSigGen.hide()
-        self.label_sigGenName.setText(''.join(message.split(',')))
+        identity = message.split(',')
+        company = identity[0]
+        model = identity[1]
+        serial = identity[2]
+        self.label_sigGenName.setText(company + ' ' + model + ' Serial: ' + serial)
+        #self.label_sigGenName.setText(''.join(message.split(',')))
         pixmap = QPixmap('AgilentN5181A.png')
         scaledPixmap = pixmap.scaled(275, 128, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_sigGen.setPixmap(scaledPixmap)
@@ -737,9 +720,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.label_modulationState.setHidden(True)
     
     def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
-        if modType == self.modulationType.value:
-            frequency /= 1000.0
-            self.lcdNumber_modFrequency.display(frequency)
+        self.spinBox_modFreq.disconnect(self.spinBox_modFreq_valueChanged)
+        self.spinBox_modFreq.setValue(frequency)
+        self.spinBox_modFreq.valueChanged.connect(self.spinBox_modFreq_valueChanged)
             
     def on_sigGen_modSubStateSet(self, modType: int, state: bool):
         if state:
@@ -756,7 +739,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.modulationType = Modulation.PM
                 
     def on_sigGen_modDepthSet(self, depth: float):
-        self.lcdNumber_modValueOut.display(depth)
+        self.spinBox_modDepth.disconnect(self.spinBox_modDepth_valueChanged)
+        self.spinBox_modDepth.setValue(depth)
+        self.spinBox_modDepth.valueChanged.connect(self.spinBox_modDepth_valueChanged)
         # TODO: Hide if not AM
         
     def on_sigGen_amTypeSet(self, linear: bool):
@@ -831,6 +816,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.modulationOn = True
             self.disableModButtons(False)
             self.signalGenerator.setModulationState(True)
+            
+    def closeEvent(self, event):
+        self.fieldProbe.stop()
+        self.signalGenerator.stop()
+        del self.fieldProbe
+        del self.signalGenerator
+        QApplication.quit()
+        sys.exit()
 
         
 if __name__ == '__main__':
