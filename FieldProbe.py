@@ -55,7 +55,7 @@ class TemperatureCommand(SerialCommand):
 
 class BatteryCommand(SerialCommand):
     def __init__(self) -> None:
-        super().__init__(command=b'BP', blocksize=5, signal=3)
+        super().__init__(command=b'BP', blocksize=6, signal=3)
         self.percentage = 100
     
     def parse(self, response: str) -> int:
@@ -166,7 +166,9 @@ class ETSLindgrenHI6006(QObject):
         self.battery_level = 100
         self.battery_fail = False
         self.command_queue = queue.Queue()
-        self.info_interval = 10
+        self.info_interval = 5.0
+        self.probeStatusInterval = 5.0
+        self.update_field = True
         self.stop_probe_event = threading.Event()
         self.stop_info_update = threading.Event()
     
@@ -226,6 +228,9 @@ class ETSLindgrenHI6006(QObject):
         self.tempBatThread = threading.Thread(target=self.updateProbeStatus)
         self.tempBatThread.start()
         
+    def setFieldUpdates(self, on: bool):
+        self.update_field = on
+        
     def endBatTempUpdates(self):
         self.stop_info_update.set()
         self.tempBatThread.join() 
@@ -237,6 +242,8 @@ class ETSLindgrenHI6006(QObject):
         while not self.stop_info_update.is_set():
             self.command_queue.put(BatteryCommand())
             self.command_queue.put(TemperatureCommand())
+            if self.update_field:
+                self.command_queue.put(CompositeDataCommand())
             self.stop_info_update.wait(self.probeStatusInterval)
         
     def getBatteryPercentage(self):

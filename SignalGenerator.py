@@ -322,6 +322,7 @@ class AgilentN5181A(QObject):
         self.stepCount = 100
         self.clearing = False
         self.detected = False
+        self.sweepTerm = 0.01
     
     def detect(self):
         print('Detecting.')
@@ -342,7 +343,7 @@ class AgilentN5181A(QObject):
     def stop(self):
         self.is_running = False
         self.commandQueue.put((SCPI.Exit, f'{SCPI.RFOut.value} {SCPI.Off.value}'))
-        if self.write_thread:
+        if self.write_thread is not None and self.write_thread.is_alive():
             self.write_thread.join()
         
     def connect(self):
@@ -555,7 +556,7 @@ class AgilentN5181A(QObject):
         self.sweepTerm = term  
     
     def startFrequencySweep(self):
-        self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.stepCount, self.stepDwell))
+        self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.sweepTerm, self.stepDwell))
         self.runSweep = True
         self.sweepThread.start()
         

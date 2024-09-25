@@ -74,16 +74,13 @@ class EquipmentLimits():
         self.max_power = max_power
         
     def setMinFrequency(self, freq: float):
-        if freq > self.min_freq:
-            self.min_freq = freq
+        self.min_freq = freq
             
     def setMaxFrequency(self, freq: float):
-        if freq < self.max_freq:
-            self.max_freq = freq
+        self.max_freq = freq
             
     def setMaxPower(self, power: float):
-        if power < self.max_power:
-            self.max_power = power
+        self.max_power = power
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     
@@ -273,47 +270,44 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.sweepOn = False
                 
     def toggleSweepUI(self, enabled: bool):
-        if enabled:
-            self.label_startFreq.setText('Start Frequency')
-        else:
-            self.label_startFreq.setText('Frequency')
+        self.spinBox_startFreq.setEnabled(enabled)
         self.spinBox_stopFreq.setEnabled(enabled)
         self.spinBox_dwell.setEnabled(enabled)
-        self.comboBox_stopFreqUnit.setEnabled(enabled)
-        self.comboBox_dwellUnit.setEnabled(enabled)
-        self.spinBox_stepCount.setEnabled(enabled)
         self.pushButton_startSweep.setEnabled(enabled)
     
-    def applyFrequencyLimits(self, freq: float) -> (float):
+    def applyFrequencyLimits(self, freq: float) -> bool:
         print(f"Frequency: {freq}, Type: {type(freq)}, ")
         if freq < self.equipmentLimits.min_freq:
-            self.label_validSettings.setText('Attempted Invalid Frequency Setting')
+            self.label_validSettings.setText('Invalid Setting: Frequency Too Low')
             self.label_validSettings.setStyleSheet('color: red')
-            freq = self.equipmentLimits.min_freq
+            self.pushButton_startSweep.setEnabled(False)
+            self.pushButton_rfOn.setEnabled(False)
+            valid = False
         elif freq > self.equipmentLimits.max_freq:
-            freq = self.equipmentLimits.max_freq
-            self.label_validSettings.setText('Attempted Invalid Frequency Setting')
+            self.label_validSettings.setText('Invalid Setting: Frequency Too High')
             self.label_validSettings.setStyleSheet('color: red')
+            self.pushButton_startSweep.setEnabled(False)
+            self.pushButton_rfOn.setEnabled(False)
+            valid = False
         else:
             self.label_validSettings.setText('Valid Settings')
             self.label_validSettings.setStyleSheet('color: green')
-        return float(freq)
+            self.pushButton_startSweep.setEnabled(True)
+            self.pushButton_rfOn.setEnabled(True)
+            valid = True
+        return valid
                 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
-        self.spinBox_startFreq.valueChanged.disconnect(self.on_spinBox_startFreq_valueChanged)
-        f = self.applyFrequencyLimits(float(freq))
-        self.spinBox_startFreq.setValue(f)
-        self.spinBox_startFreq.valueChanged.connect(self.on_spinBox_startFreq_valueChanged)
-        self.signalGenerator.setStartFrequency(float(f))
+        valid = self.applyFrequencyLimits(float(freq))
+        if valid:
+            self.signalGenerator.setStartFrequency(float(freq))
             
         
     def on_spinBox_stopFreq_valueChanged(self, freq: float):
-        self.spinBox_stopFreq.valueChanged.disconnect(self.on_spinBox_stopFreq_valueChanged)
-        f = self.applyFrequencyLimits(float(freq))
-        self.spinBox_stopFreq.setValue(f)
-        self.spinBox_stopFreq.valueChanged.connect(self.on_spinBox_stopFreq_valueChanged)
-        self.signalGenerator.setStopFrequency(float(f))
+        valid = self.applyFrequencyLimits(float(freq))
+        if valid:
+            self.signalGenerator.setStopFrequency(float(freq))
 
     def on_spinBox_dwell_valueChanged(self, time: float):
         self.signalGenerator.setStepDwell(float(time), self.comboBox_dwellUnit.currentText())
@@ -325,16 +319,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.spinBox_dwell.setValue(0.00105)
 
     def on_spinBox_sweepTerm_valueChanged(self, term: float):
+        print("Sweep Term: " + str(term))
         self.signalGenerator.setSweepTerm(float(term))
     
     def on_pushButton_startSweep_pressed(self):
         self.sweepOn = True
         self.signalGenerator.setRFOut(True)
+        self.fieldProbe.setFieldUpdates(False)
+        self.fieldProbe.setUpdateInterval(2.0)
+        self.fieldProbe.getFieldStrengthMeasurement()
         self.toggleSweepUI(enabled=False)
         self.pushButton_pauseSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(False)
         
     def on_pushButton_pauseSweep_pressed(self):
+        self.fieldProbe.setFieldUpdates(True)
+        self.fieldProbe.setUpdateInterval(0.5)
         self.signalGenerator.stopFrequencySweep()
         
     def on_radioButton_modType_toggled(self):
@@ -554,13 +554,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_fieldProbe.setPixmap(scaledPixmap)
         self.label_fieldProbeName.setText('ETS Lindgren ' + model + ' Serial: ' + serial)
         self.fieldProbe.getFieldStrengthMeasurement()
-        self.fieldProbe.beginBatTempUpdates(2.0)
+        self.fieldProbe.beginBatTempUpdates(0.5)
 
     @pyqtSlot(float, float, float, float)
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
         self.measuredFieldIntensity = composite
         self.updateFieldStrengthUI(x, y, z, composite)
-        if self.outputOn:
+        if self.sweepOn or self.outputOn:
             output = self.pidController.calculate(composite)
             #print("PID Out: " + str(output))
             if output > self.equipmentLimits.max_power:
@@ -651,15 +651,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sigGen.setPixmap(scaledPixmap)
         
     def on_sigGen_frequencySet(self, frequency: float):
-        if frequency < 1000000.0:
-            frequency /= 1000.0
-            self.label_freqOutUnit.setText('kHz')
-        elif frequency > 1000000.0 and frequency < 1000000000.0:
-            frequency /= 1000000.0
-            self.label_freqOutUnit.setText('MHz')
-        else:
-            frequency /= 1000000000.0
-            self.label_freqOutUnit.setText('GHz')
+        frequency /= 1000000.0
         self.frequencyPlot.plotData(QTime.currentTime(), frequency)
         self.lcdNumber_freqOut.display(round(frequency, 9))
     
@@ -667,10 +659,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.currentOutputPower = power
         self.lcdNumber_powerOut.display(power)
         self.intensityPlot.plotData(QTime.currentTime(), power)
+        self.fieldProbe.getFieldStrengthMeasurement()
     
     def on_sigGen_sweepFinished(self):
         self.sweepRunning = False
         self.signalGenerator.setRFOut(False)
+        self.fieldProbe.setFieldUpdates(True)
+        self.fieldProbe.setUpdateInterval(0.5)
         self.toggleSweepUI(enabled=True)
         self.pushButton_startSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(True)
@@ -742,7 +737,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_modDepth.disconnect(self.spinBox_modDepth_valueChanged)
         self.spinBox_modDepth.setValue(depth)
         self.spinBox_modDepth.valueChanged.connect(self.spinBox_modDepth_valueChanged)
-        # TODO: Hide if not AM
         
     def on_sigGen_amTypeSet(self, linear: bool):
         if linear:
