@@ -1144,7 +1144,7 @@ Frequency (High) = 6.0 GHz</string>
             <bool>false</bool>
            </property>
            <property name="digitCount">
-            <number>6</number>
+            <number>4</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
@@ -1256,7 +1256,7 @@ Frequency (High) = 6.0 GHz</string>
             </font>
            </property>
            <property name="digitCount">
-            <number>6</number>
+            <number>4</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
@@ -1366,7 +1366,7 @@ Frequency (High) = 6.0 GHz</string>
             <bool>false</bool>
            </property>
            <property name="digitCount">
-            <number>6</number>
+            <number>4</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
@@ -1458,7 +1458,7 @@ Frequency (High) = 6.0 GHz</string>
             <bool>false</bool>
            </property>
            <property name="digitCount">
-            <number>18</number>
+            <number>4</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
@@ -1592,7 +1592,7 @@ Frequency (High) = 6.0 GHz</string>
             </size>
            </property>
            <property name="digitCount">
-            <number>12</number>
+            <number>6</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
@@ -1644,7 +1644,7 @@ Frequency (High) = 6.0 GHz</string>
             <number>1</number>
            </property>
            <property name="digitCount">
-            <number>12</number>
+            <number>6</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
@@ -1681,7 +1681,7 @@ Frequency (High) = 6.0 GHz</string>
             </font>
            </property>
            <property name="text">
-            <string>Frequency (kHz)</string>
+            <string>Frequency (MHz)</string>
            </property>
           </widget>
          </item>
@@ -1709,7 +1709,7 @@ Frequency (High) = 6.0 GHz</string>
             <bool>false</bool>
            </property>
            <property name="digitCount">
-            <number>12</number>
+            <number>6</number>
            </property>
            <property name="segmentStyle">
             <enum>QLCDNumber::Flat</enum>
