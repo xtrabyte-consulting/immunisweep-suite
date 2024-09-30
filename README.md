@@ -29,18 +29,11 @@
 
 
 ### TODO:
-- Z field value.
 - sweep going weird
 - Space for Amplifier data
 - disconnecting slots?
 - graphs
-- Freq Out Label MHz instead of KHz
-- Sweep bar off by 10x
-- Power stuck at 0.
-- No Probe Input after sweep starts.
 - RF On starts sweep
--Traceback (most recent call last):
-  File "C:\Users\bryce\Projects\EFieldController\SigGenControlUtility\FieldIntensityController.py", line 564, in on_fieldProbe_fieldIntensityReceived
-    output = self.pidController.calculate(composite)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: PIDController.calculate() missing 1 required positional argument: 'current_field'
+- Disable Stop Sweep button when it's finished
+- Mess with Gains (Not very tightly bound) ( Perhaps make a Settings UI)
+- Stop setting power if RF is off after sweep
