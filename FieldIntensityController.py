@@ -43,17 +43,16 @@ class PIDController():
         self.Kd = Kd
     
     def setTargetValue(self, setpoint: float):
-        self.desired_value = setpoint
+        print(f"Desired field set to: {setpoint}")
+        self.desired_field = setpoint
         
     def calculate(self, current_field: float) -> float:
         error = self.desired_field - current_field
         self.integral += error
         derivative = error - self.prev_error
-
         output = (self.Kp * error) + (self.Ki * self.integral) + (self.Kd * derivative)
-
         self.prev_error = error
-
+        print(f"Current Field: {current_field}, Error: {error}, Integral: {self.integral}, Derivative: {derivative}, Output: {output}")
         return output
     
     def clear(self):
@@ -124,7 +123,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.desiredFieldIntensity = 0.0
         self.currentOutputPower = 0.0
         self.currentOutputFrequency = 30.0
-        self.equipmentLimits = EquipmentLimits(0.1, 6000.0, 10.0)
+        self.equipmentLimits = EquipmentLimits(0.1, 6000.0, 8.0)
         
         
         ### UI Input and Control Signal -> Slot Connections
@@ -159,7 +158,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
         
         # Closed-Loop Power Control
-        self.pidController = PIDController(1.0, 1.0, 0.5)
+        self.pidController = PIDController(0.1, 0.1, 0.1)
         
         # Initiate Plots
         self.intensityPlot = PowerPlot()
@@ -308,6 +307,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_pushButton_pauseSweep_pressed(self):
         self.signalGenerator.stopFrequencySweep()
+        self.toggleSweepUI(enabled=True)
                 
     def spinBox_modDepth_valueChanged(self, percent: float):
         self.signalGenerator.setAMLinearDepth(float(percent))
@@ -399,24 +399,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.intensityPlot.plotData(QTime.currentTime(), z)
     
     def on_fieldProbe_batteryReceived(self, level: int):
-        print(f"Probe Charge Level: {str(level)}")
         self.label_chargeLevel.setText(f'{str(level)} %')
         
     def on_fieldProbe_temperatureReceived(self, temp: float):
-        print(f"Probe Temp Receievd: {str(temp)}")
         self.label_temperature.setText(f'{str(temp)} °F')
     
     def on_fieldProbe_fieldProbeError(self, message: str):
-        print(f"Probe Error: {message}")
         self.displayAlert(message)
         
     def on_fieldProbe_serialConnectionError(self, message: str):
-        print(f"Serial Error: {message}")
         self.displayAlert(message)
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
-            print('RF On')
             self.pushButton_rfOn.setEnabled(False)
             self.pushButton_rfOff.setEnabled(True)
             pixmap = QPixmap('broadcast-on.png')
@@ -428,7 +423,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.signalGenerator.startFrequencySweep()
                 self.sweepRunning = True
         else:
-            print("RF Off")
             self.pushButton_rfOn.setEnabled(True)
             self.pushButton_rfOff.setEnabled(False)
             pixmap = QPixmap('broadcast-off.png')
@@ -476,8 +470,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_sigGen_sweepFinished(self):
         self.sweepRunning = False
         self.signalGenerator.setRFOut(False)
-        self.fieldProbe.setFieldUpdates(True)
-        self.fieldProbe.setUpdateInterval(0.5)
         self.toggleSweepUI(enabled=True)
         self.pushButton_startSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(True)
@@ -522,7 +514,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_modUnit.setText('dBm')
         
     def on_sigGen_error(self, message: str):
-        print(message)
         self.displayAlert(message)
     
     def disableSweepButtons(self, state: bool):
