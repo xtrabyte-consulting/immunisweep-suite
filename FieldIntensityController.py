@@ -34,27 +34,23 @@ class PIDController():
         self.Kd = Kd
         self.prev_error = 0.0
         self.integral = 0.0
-        self.desired_value = 0.0
-        self.measured_value = 0.0
-        
-    def setMeasuredValue(self, actual: float):
-        self.measured_value = actual
+        self.desired_field = 0.0
+        self.current_field = 0.0
+    
+    def setGains(self, Kp: float, Ki: float, Kd: float):
+        self.Kp = Kp
+        self.Ki = Ki
+        self.Kd = Kd
     
     def setTargetValue(self, setpoint: float):
         self.desired_value = setpoint
         
-    def calculate(self) -> float:
-        return self.calculate(self.desired_value, self.measured_value)
-        
     def calculate(self, current_field: float) -> float:
-        return self.calculate(self.desired_value, current_field)
-        
-    def calculate(self, desired_field: float, current_field: float) -> float:
-        error = desired_field - current_field
+        error = self.desired_field - current_field
         self.integral += error
         derivative = error - self.prev_error
 
-        output = self.Kp * error + self.Ki * self.integral + self.Kd * derivative
+        output = (self.Kp * error) + (self.Ki * self.integral) + (self.Kd * derivative)
 
         self.prev_error = error
 
@@ -72,13 +68,13 @@ class EquipmentLimits():
         self.min_freq = min_freq
         self.max_freq = max_freq
         self.max_power = max_power
-        
+
     def setMinFrequency(self, freq: float):
         self.min_freq = freq
-            
+
     def setMaxFrequency(self, freq: float):
         self.max_freq = freq
-            
+
     def setMaxPower(self, power: float):
         self.max_power = power
 
@@ -104,7 +100,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fieldProbe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
         
         # Signal Generator Signal -> Slot Connections
-        self.signalGenerator = AgilentN5181A('192.168.100.79', 5024)
+        self.signalGenerator = AgilentN5181A()
         #self.signalGenerator = SignalGenerator()
         self.signalGenerator.instrumentDetected.connect(self.on_sigGen_instrumentDetected)
         self.signalGenerator.instrumentConnected.connect(self.on_sigGen_instrumentConnected)
@@ -252,7 +248,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_connectSigGenButton_pressed(self):
         self.signalGenerator.retryDetection()
-        
+    
+    '''
     def on_radioButton_sweepType_toggled(self):
         sender = self.sender()
         if sender.isChecked():
@@ -268,7 +265,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             elif sender == self.radioButton_sweepOff:
                 self.toggleSweepUI(enabled=False)
                 self.sweepOn = False
-                
+    '''
+
     def toggleSweepUI(self, enabled: bool):
         self.spinBox_startFreq.setEnabled(enabled)
         self.spinBox_stopFreq.setEnabled(enabled)
@@ -325,18 +323,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_pushButton_startSweep_pressed(self):
         self.sweepOn = True
         self.signalGenerator.setRFOut(True)
-        self.fieldProbe.setFieldUpdates(False)
-        self.fieldProbe.setUpdateInterval(2.0)
-        self.fieldProbe.getFieldStrengthMeasurement()
         self.toggleSweepUI(enabled=False)
         self.pushButton_pauseSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(False)
         
     def on_pushButton_pauseSweep_pressed(self):
-        self.fieldProbe.setFieldUpdates(True)
-        self.fieldProbe.setUpdateInterval(0.5)
         self.signalGenerator.stopFrequencySweep()
-        
+    
+    ''' 
     def on_radioButton_modType_toggled(self):
         sender = self.sender()
         if sender.isChecked():
@@ -358,6 +352,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.radioButton_amState.toggled.connect(self.on_radioButton_modType_toggled)
             self.radioButton_fmState.toggled.connect(self.on_radioButton_modType_toggled)
             self.radioButton_pmState.toggled.connect(self.on_radioButton_modType_toggled)
+     
                 
     def on_radioButton_source_toggled(self):
         sender = self.sender()
@@ -392,6 +387,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.setCurrentModMode(True)
             elif sender == self.radioButton_deepHighMode:
                 self.setCurrentModMode(False)
+    '''
                 
     def spinBox_modDepth_valueChanged(self, percent: float):
         self.signalGenerator.setAMLinearDepth(float(percent))
@@ -425,9 +421,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if freq > 20000.0 or freq < 0.0001:
             self.label_validSettings.setText('Invalid AM Frequency Setting')
             self.label_validSettings.setStyleSheet('color: red')
+            self.pushButton_modulationOn.setEnabled(False)
             return
         self.label_validSettings.setText('Valid Settings')
         self.label_validSettings.setStyleSheet('color: green')
+        self.pushButton_modulationOn.setEnabled(True)
         self.signalGenerator.setAMFrequency(freq)
         
     def pushButton_modulationState_pressed(self):
@@ -437,7 +435,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #TODO: Move To Signal
         self.pushButton_modulationOff.setEnabled(on)
         self.pushButton_modulationOn.setEnabled(not on)
-        
+    
+    '''
     def setCurrentModMode(self, normal: bool):
         if self.modulationType == Modulation.AM:
             self.signalGenerator.setAMMode(normal)
@@ -539,7 +538,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.radioButton_deepHighMode.setHidden(False)
             self.radioButton_basicMode.setEnabled(True)
             self.radioButton_basicMode.setChecked(True)
-            self.radioButton_deepHighMode.setEnabled(True)       
+            self.radioButton_deepHighMode.setEnabled(True)  
+    '''      
         
     def displayAlert(self, text):
         self.alert = QMessageBox()
@@ -553,8 +553,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         scaledPixmap = pixmap.scaled(275, 128, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_fieldProbe.setPixmap(scaledPixmap)
         self.label_fieldProbeName.setText('ETS Lindgren ' + model + ' Serial: ' + serial)
-        self.fieldProbe.getFieldStrengthMeasurement()
-        self.fieldProbe.beginBatTempUpdates(0.5)
 
     @pyqtSlot(float, float, float, float)
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
@@ -562,7 +560,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.updateFieldStrengthUI(x, y, z, composite)
         if self.sweepOn or self.outputOn:
             output = self.pidController.calculate(composite)
-            #print("PID Out: " + str(output))
+            print("PID Out: " + str(output))
             if output > self.equipmentLimits.max_power:
                 output = self.equipmentLimits.max_power
                 self.label_validSettings.setText('Attempted Invalid Power Setting')
@@ -659,7 +657,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.currentOutputPower = power
         self.lcdNumber_powerOut.display(power)
         self.intensityPlot.plotData(QTime.currentTime(), power)
-        self.fieldProbe.getFieldStrengthMeasurement()
     
     def on_sigGen_sweepFinished(self):
         self.sweepRunning = False
