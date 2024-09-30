@@ -109,8 +109,7 @@ class FieldProbe(QObject):
         self.is_running = False
         self.battery_level = 100
         self.battery_fail = False
-        self.info_interval = 10
-        self.stop_info_update = threading.Event()
+        self.info_interval = 2.0
         
     def start(self):
         self.is_running = True
@@ -121,22 +120,6 @@ class FieldProbe(QObject):
     
     def initializeProbe(self):
         self.identityReceived.emit('6006', '', '', '')
-        
-    def beginBatTempUpdates(self):
-        self.tempBatThread = threading.Thread(target=self.updateProbeStatus)
-        self.tempBatThread.start()
-        
-    def endBatTempUpdates(self):
-        self.tempBatThread.join()
-        
-    def setUpdateInterval(self, interval: int):
-        self.probeStatusInterval = interval if interval > 5 else 5
-        
-    def updateProbeStatus(self):
-        while self.stop_info_update.is_set():
-            self.batteryReceived.emit(random.randrange(0, 100))
-            self.temperatureReceived.emit(random.randrange(40, 110))
-            self.stop_info_update.wait(self.probeStatusInterval)
             
     def getBatteryPercentage(self):
         self.batteryReceived.emit(random.randrange(0, 100))
@@ -169,7 +152,6 @@ class ETSLindgrenHI6006(QObject):
         self.info_interval = 2.0
         self.data_interval = 0.1
         self.stop_probe_event = threading.Event()
-        #self.stop_info_update = threading.Event()
     
     def commandToSignal(self, command: SerialCommand) -> pyqtSignal:
         if type(command) == IdentityCommand:
@@ -211,7 +193,6 @@ class ETSLindgrenHI6006(QObject):
             print('Unknown Error')
         
     def stop(self):
-        #self.endBatTempUpdates()
         self.is_running = False
         self.stop_probe_event.set()
         if self.probe_thread.is_alive() and self.probe_thread is not None:
@@ -221,33 +202,6 @@ class ETSLindgrenHI6006(QObject):
         
     def initializeProbe(self):
         self.command_queue.put(IdentityCommand())
-    
-    '''    
-    def beginBatTempUpdates(self, update_interval: float = 2.0):
-        self.probeStatusInterval = update_interval
-        self.tempBatThread = threading.Thread(target=self.updateProbeStatus)
-        self.tempBatThread.start()
-        
-    def setFieldUpdates(self, on: bool):
-        self.update_field = on
-        
-    
-    def endBatTempUpdates(self):
-        self.stop_info_update.set()
-        self.tempBatThread.join() 
-        
-    def setUpdateInterval(self, interval: int):
-        self.probeStatusInterval = interval if interval > 5 else 5
-    
-        
-    def updateProbeStatus(self):
-        while not self.stop_info_update.is_set():
-            self.command_queue.put(BatteryCommand())
-            self.command_queue.put(TemperatureCommand())
-            if self.update_field:
-                self.command_queue.put(CompositeDataCommand())
-            self.stop_info_update.wait(self.probeStatusInterval)
-    '''
         
     def getBatteryPercentage(self):
         self.command_queue.put(BatteryCommand())
