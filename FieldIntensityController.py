@@ -245,24 +245,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_connectSigGenButton_pressed(self):
         self.signalGenerator.retryDetection()
-    
-    '''
-    def on_radioButton_sweepType_toggled(self):
-        sender = self.sender()
-        if sender.isChecked():
-            if sender == self.radioButton_linSweep:
-                self.toggleSweepUI(enabled=True)
-                self.sweepOn = True
-                self.signalGenerator.setSweepType(False)
-            elif sender == self.radioButton_logSweep:
-                # TODO: Logic to get sig gen to calculate steps with 1% jump spec
-                self.toggleSweepUI(enabled=True)
-                self.sweepOn = True
-                self.signalGenerator.setSweepType(True)
-            elif sender == self.radioButton_sweepOff:
-                self.toggleSweepUI(enabled=False)
-                self.sweepOn = False
-    '''
 
     def toggleSweepUI(self, enabled: bool):
         self.spinBox_startFreq.setEnabled(enabled)
