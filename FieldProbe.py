@@ -91,7 +91,7 @@ class CompositeDataCommand(SerialCommand):
         response_str = response.strip(':DN')
         self.x = float(response_str[0:5])
         self.y = float(response_str[5:10])
-        self.x = float(response_str[10:15])
+        self.z = float(response_str[10:15])
         self.composite = float(response_str[15:20])
         return self.x, self.y, self.z, self.composite
 
@@ -114,12 +114,12 @@ class FieldProbe(QObject):
         
     def start(self):
         self.is_running = True
-        self.initiaizeProbe()
+        self.initializeProbe()
         
     def stop(self):
         self.is_running = False
     
-    def initiaizeProbe(self):
+    def initializeProbe(self):
         self.identityReceived.emit('6006', '', '', '')
         
     def beginBatTempUpdates(self):
@@ -166,11 +166,10 @@ class ETSLindgrenHI6006(QObject):
         self.battery_level = 100
         self.battery_fail = False
         self.command_queue = queue.Queue()
-        self.info_interval = 5.0
-        self.probeStatusInterval = 5.0
-        self.update_field = True
+        self.info_interval = 2.0
+        self.data_interval = 0.1
         self.stop_probe_event = threading.Event()
-        self.stop_info_update = threading.Event()
+        #self.stop_info_update = threading.Event()
     
     def commandToSignal(self, command: SerialCommand) -> pyqtSignal:
         if type(command) == IdentityCommand:
@@ -190,7 +189,7 @@ class ETSLindgrenHI6006(QObject):
             self.serial = serial.Serial(self.serial_port, baudrate=9600, bytesize=serial.SEVENBITS, parity=serial.PARITY_ODD, stopbits=1, timeout=5)
             self.probe_thread = threading.Thread(target=self.readWriteProbe)
             self.probe_thread.start()
-            self.initiaizeProbe()
+            self.initializeProbe()
         except ValueError as e:
             self.is_running = False
             self.serialConnectionError.emit(str(e))
@@ -212,7 +211,7 @@ class ETSLindgrenHI6006(QObject):
             print('Unknown Error')
         
     def stop(self):
-        self.endBatTempUpdates()
+        #self.endBatTempUpdates()
         self.is_running = False
         self.stop_probe_event.set()
         if self.probe_thread.is_alive() and self.probe_thread is not None:
@@ -220,9 +219,10 @@ class ETSLindgrenHI6006(QObject):
         if self.serial and self.serial.is_open:
             self.serial.close()
         
-    def initiaizeProbe(self):
+    def initializeProbe(self):
         self.command_queue.put(IdentityCommand())
-        
+    
+    '''    
     def beginBatTempUpdates(self, update_interval: float = 2.0):
         self.probeStatusInterval = update_interval
         self.tempBatThread = threading.Thread(target=self.updateProbeStatus)
@@ -231,12 +231,14 @@ class ETSLindgrenHI6006(QObject):
     def setFieldUpdates(self, on: bool):
         self.update_field = on
         
+    
     def endBatTempUpdates(self):
         self.stop_info_update.set()
         self.tempBatThread.join() 
         
     def setUpdateInterval(self, interval: int):
         self.probeStatusInterval = interval if interval > 5 else 5
+    
         
     def updateProbeStatus(self):
         while not self.stop_info_update.is_set():
@@ -245,6 +247,7 @@ class ETSLindgrenHI6006(QObject):
             if self.update_field:
                 self.command_queue.put(CompositeDataCommand())
             self.stop_info_update.wait(self.probeStatusInterval)
+    '''
         
     def getBatteryPercentage(self):
         self.command_queue.put(BatteryCommand())
@@ -256,8 +259,16 @@ class ETSLindgrenHI6006(QObject):
         self.command_queue.put(CompositeDataCommand())
     
     def readWriteProbe(self):
+        last_info_update = time.time()
+        last_data_update = time.time()
         while not self.stop_probe_event.is_set() and self.is_running:
-            
+            if time.time() - last_data_update >= self.data_interval:
+                self.getFieldStrengthMeasurement()
+                last_data_update = time.time()
+            if time.time() - last_info_update >= self.info_interval:
+                self.getBatteryPercentage()
+                self.getTemperature()
+                last_info_update = time.time()
             if not self.command_queue.empty():
                 serial_command: SerialCommand = self.command_queue.get()
                 self.serial.write(serial_command.command)
