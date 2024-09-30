@@ -594,26 +594,20 @@ class AgilentN5181A(QObject):
         print("Starting SCPI comms loop...")
         while self.is_running:
             # This will block until a command is availible
-            print("SCPI Write Thread Running")
             if self.clearing:
                 print("Blocking Loop until command Queue is empty.")
                 self.commandQueue.join()
             else:
-                print("Retreiving next command")
                 command = self.commandQueue.get()
-                print(f"Sending command: {str(command[0])}")
                 commandType = command[0]
                 commandValue = command[1]
                 if commandType == SCPI.Exit:
                     print('Exiting write thread')
                     break
-                print(f'Writing SCPI: {str(commandValue)}')
                 self.instrument.write(commandValue)
                 complete = self.instrument.query(SCPI.OperationComplete.value)
                 #if complete:
-                print(f'Write operation completed: {complete}. Querying state...')
                 state = self.instrument.query(f'{commandType.value}?')
-                print(f'Query response: {state}')
                 if commandType == SCPI.Identity: 
                     self.instrumentConnected.emit(state)
                 elif commandType == SCPI.RFOut:

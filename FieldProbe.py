@@ -50,7 +50,6 @@ class TemperatureCommand(SerialCommand):
     
     def parse(self, response: str) -> float:
         self.temperature = float(response.strip('T'))
-        print(f'Temp: {self.temperature}')
         return self.temperature
 
 class BatteryCommand(SerialCommand):
@@ -60,7 +59,6 @@ class BatteryCommand(SerialCommand):
     
     def parse(self, response: str) -> int:
         self.percentage = int(response.strip('BN'))
-        print(f'Battery: {self.percentage}')
         return self.percentage
     
 class IdentityCommand(SerialCommand):
@@ -227,9 +225,7 @@ class ETSLindgrenHI6006(QObject):
                 serial_command: SerialCommand = self.command_queue.get()
                 self.serial.write(serial_command.command)
                 response = self.serial.read(serial_command.blocksize)
-                print("Response: ", response)
                 error, message = serial_command.checkForError(response)
-                print("Message: ", message)
                 if error:
                     self.fieldProbeError.emit(message)
                 else:
