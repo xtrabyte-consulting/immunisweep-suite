@@ -9,9 +9,12 @@ from MainWindow import Ui_MainWindow
 from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency, SignalGenerator
 from FieldProbe import ETSLindgrenHI6006, FieldProbe
 from Plots import PowerPlot
+from LivePlot import FrequencyPlot
 
 import os
 import sys
+import math
+import time
 
 import signal
 from PyQt5.QtCore import QResource
@@ -124,6 +127,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.currentOutputPower = 0.0
         self.currentOutputFrequency = 30.0
         self.equipmentLimits = EquipmentLimits(0.1, 6000.0, 8.0)
+        self.sweepStartTime = 0.0
         
         
         ### UI Input and Control Signal -> Slot Connections
@@ -161,10 +165,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pidController = PIDController(0.1, 0.1, 0.1)
         
         # Initiate Plots
-        self.intensityPlot = PowerPlot()
-        self.graphicsView_powerAndField.setScene(self.intensityPlot)
-        self.frequencyPlot = PowerPlot(title="Frequency", labels={'left': "Frequency (dBm)", 'bottom': 'Time (sec)'})
-        self.graphicsView_frequencySweep.setScene(self.frequencyPlot)
+        self.plot_widget = QWidget(self)
+        self.frequency_plot_widget = FrequencyPlot(self.plot_widget)
+        self.gridLayout_frequencyPlot.addWidget(self.frequency_plot_widget)
+        #self.intensityPlot = PowerPlot()
+        #self.graphicsView_powerAndField.setScene(self.intensityPlot)
+        #self.frequencyPlot = PowerPlot(title="Frequency", labels={'left': "Frequency (dBm)", 'bottom': 'Time (sec)'})
+        #self.graphicsView_frequencySweep.setScene(self.frequencyPlot)
         
         # Other UI Setup
         self.pushButton_pauseSweep.setEnabled(False)
@@ -278,15 +285,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         valid = self.applyFrequencyLimits(float(freq))
         if valid:
             self.signalGenerator.setStartFrequency(float(freq))
-            
-        
+            self.frequency_plot_widget.set_start_frequency(float(freq))
+
     def on_spinBox_stopFreq_valueChanged(self, freq: float):
         valid = self.applyFrequencyLimits(float(freq))
         if valid:
             self.signalGenerator.setStopFrequency(float(freq))
+            steps = self.calculateSweepStepCount(self.signalGenerator.startFrequency, float(freq * 1000), self.signalGenerator.sweepTerm)
+            self.frequency_plot_widget.set_stop_frequency(float(freq), steps, self.signalGenerator.stepDwell)
 
     def on_spinBox_dwell_valueChanged(self, time: float):
         self.signalGenerator.setStepDwell(float(time), self.comboBox_dwellUnit.currentText())
+        steps = self.calculateSweepStepCount(self.signalGenerator.startFrequency, self.signalGenerator.stopFrequency, self.signalGenerator.sweepTerm)
+        self.frequency_plot_widget.set_stop_frequency(self.signalGenerator.stopFrequency, steps, self.signalGenerator.stepDwell)
             
     def on_comboBox_dwellUnit_activated(self):
         # Capture Spec Floor
@@ -297,10 +308,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_spinBox_sweepTerm_valueChanged(self, term: float):
         print("Sweep Term: " + str(term))
         self.signalGenerator.setSweepTerm(float(term))
+        steps = self.calculateSweepStepCount(self.signalGenerator.startFrequency, self.signalGenerator.stopFrequency, term)
+        self.frequency_plot_widget.set_stop_frequency(self.signalGenerator.stopFrequency, steps, self.signalGenerator.stepDwell)
     
     def on_pushButton_startSweep_pressed(self):
         self.sweepOn = True
         self.signalGenerator.setRFOut(True)
+        self.sweepStartTime = time.time()
         self.toggleSweepUI(enabled=False)
         self.pushButton_pauseSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(False)
@@ -459,7 +473,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_sigGen_frequencySet(self, frequency: float):
         frequency /= 1000000.0
-        self.frequencyPlot.plotData(QTime.currentTime(), frequency)
+        #self.frequencyPlot.plotData(QTime.currentTime(), frequency)
+        self.frequency_plot_widget.update_plot(time.time() - self.sweepStartTime, frequency)
         self.lcdNumber_freqOut.display(round(frequency, 9))
     
     def on_sigGen_powerSet(self, power: float):
@@ -563,6 +578,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.disableModButtons(False)
             self.signalGenerator.setModulationState(True)
             
+    def calculateSweepStepCount(self, start: float, stop: float, term: float) -> int:
+        freq_log = math.log(stop / start)
+        term_log = math.log(1.0 + term)
+        return int(math.ceil(freq_log / term_log))
+    
     def closeEvent(self, event):
         self.fieldProbe.stop()
         self.signalGenerator.stop()

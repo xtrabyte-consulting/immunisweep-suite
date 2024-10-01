@@ -182,7 +182,7 @@ class ETSLindgrenHI6006(QObject):
             self.serialConnectionError.emit(str(e))
             print(str(e))
         except serialutil.SerialException as e:
-            running = False
+            self.is_running = False
             self.serialConnectionError.emit(str(e))
             print(str(e))
         except:

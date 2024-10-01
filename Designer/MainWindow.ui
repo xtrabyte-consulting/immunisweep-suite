@@ -1752,7 +1752,7 @@ Frequency (High) = 6.0 GHz</string>
       </layout>
      </item>
      <item row="0" column="2">
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="gridLayout_frequencyPlot">
        <item row="0" column="0">
         <widget class="QLabel" name="label_sweepPlotTitle">
          <property name="text">
@@ -1760,32 +1760,17 @@ Frequency (High) = 6.0 GHz</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QGraphicsView" name="graphicsView_frequencySweep">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>500</width>
-           <height>360</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>1000</width>
-           <height>360</height>
-          </size>
-         </property>
-        </widget>
-       </item>
       </layout>
      </item>
      <item row="1" column="2">
-      <layout class="QGridLayout" name="gridLayout_11">
+      <layout class="QGridLayout" name="gridLayout_powerPlot">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_modPlotTitle">
+         <property name="text">
+          <string>Output Power and Field</string>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="0">
         <widget class="QGraphicsView" name="graphicsView_powerAndField">
          <property name="sizePolicy">
@@ -1799,13 +1784,6 @@ Frequency (High) = 6.0 GHz</string>
            <width>430</width>
            <height>380</height>
           </size>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_modPlotTitle">
-         <property name="text">
-          <string>Output Power and Field</string>
          </property>
         </widget>
        </item>
