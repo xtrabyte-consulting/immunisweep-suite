@@ -130,7 +130,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.zfieldIntensity = 0.0
         self.currentOutputPower = 0.0
         self.currentOutputFrequency = 30.0
-        self.equipmentLimits = EquipmentLimits(0.1, 6000.0, 8.0)
+        self.equipmentLimits = EquipmentLimits(0.1, 6000.0, 15.0)
         self.sweepStartTime = time.time()
         self.powerStartTime = time.time()
         
@@ -167,7 +167,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
         
         # Closed-Loop Power Control
-        self.pidController = PIDController(0.5, 0.1, 0.1)
+        self.pidController = PIDController(1.0, 0.3, 0.5)
         
         # Initiate Plots
         self.plot_widget = QWidget(self)
@@ -335,6 +335,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.toggleSweepUI(enabled=False)
         self.pushButton_pauseSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(False)
+        self.signalGenerator.startFrequencySweep()
         
     def on_pushButton_pauseSweep_pressed(self):
         self.signalGenerator.stopFrequencySweep()
