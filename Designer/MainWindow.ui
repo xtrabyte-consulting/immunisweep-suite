@@ -1771,22 +1771,6 @@ Frequency (High) = 6.0 GHz</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QGraphicsView" name="graphicsView_powerAndField">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>430</width>
-           <height>380</height>
-          </size>
-         </property>
-        </widget>
-       </item>
       </layout>
      </item>
     </layout>
