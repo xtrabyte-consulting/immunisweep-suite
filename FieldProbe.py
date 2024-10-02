@@ -58,7 +58,7 @@ class BatteryCommand(SerialCommand):
         self.percentage = 100
     
     def parse(self, response: str) -> int:
-        self.percentage = int(response.strip('BN'))
+        self.percentage = int(response[1:3], 16)
         return self.percentage
     
 class IdentityCommand(SerialCommand):
