@@ -58,7 +58,7 @@ class BatteryCommand(SerialCommand):
         self.percentage = 100
     
     def parse(self, response: str) -> int:
-        self.percentage = int(response.strip('BN'))
+        self.percentage = int(response[1:3], 16)
         return self.percentage
     
 class IdentityCommand(SerialCommand):
@@ -182,7 +182,7 @@ class ETSLindgrenHI6006(QObject):
             self.serialConnectionError.emit(str(e))
             print(str(e))
         except serialutil.SerialException as e:
-            running = False
+            self.is_running = False
             self.serialConnectionError.emit(str(e))
             print(str(e))
         except:

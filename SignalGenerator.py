@@ -318,7 +318,7 @@ class AgilentN5181A(QObject):
         self.sweepType = Sweep.OFF
         self.startFrequency = 100.0
         self.stopFrequency = 6000.0
-        self.stepDwell = 0.1
+        self.stepDwell = 0.5
         self.stepCount = 100
         self.clearing = False
         self.detected = False
@@ -341,8 +341,11 @@ class AgilentN5181A(QObject):
         self.ping_thread.join()
 
     def stop(self):
-        self.is_running = False
         self.commandQueue.put((SCPI.Exit, f'{SCPI.RFOut.value} {SCPI.Off.value}'))
+        self.is_running = False
+        self.ping_started = False
+        if self.ping_thread is not None and self.ping_thread.is_alive():
+            self.ping_thread.join()
         if self.write_thread is not None and self.write_thread.is_alive():
             self.write_thread.join()
         
@@ -397,7 +400,7 @@ class AgilentN5181A(QObject):
         self.commandQueue.put((SCPI.Frequency, f'{SCPI.Frequency.value} {str(freq)} {unit}'))
         
     def setPower(self, pow: float):
-        print(f'Setting Power: {str(pow)}')
+        #print(f'Setting Power: {str(pow)}')
         if pow > 9.9:
             pow = 9.9
             self.error.emit("Power above amplifier maximum input. Setting to 9.9 dBm")
@@ -534,9 +537,17 @@ class AgilentN5181A(QObject):
         # Convert to kHz
         self.startFrequency = freq * 1000
         
+    def getStartFrequency(self) -> float:
+        # Convert back to MHz
+        return self.startFrequency / 1000 
+        
     def setStopFrequency(self, freq: float):
         # Convert to kHz
         self.stopFrequency = freq * 1000
+        
+    def getStopFrequency(self) -> float:
+        # Convert back to MHz
+        return self.stopFrequency / 1000
     
     def getDefaultLogarithmicStepCount(self) -> int:
         steps = math.log(self.stopFrequency / self.startFrequency) / math.log(1.01)
@@ -553,7 +564,15 @@ class AgilentN5181A(QObject):
         self.stepDwell = dwell
         
     def setSweepTerm(self, term: float):
-        self.sweepTerm = term  
+        self.sweepTerm = term
+    
+    def getStepCount(self) -> int:
+        steps = math.log(self.stopFrequency / self.startFrequency) / math.log(1.0 + self.sweepTerm)
+        self.stepCount = int(math.ceil(steps))
+        return self.stepCount
+    
+    def getSweepTime(self) -> float:
+        return self.stepDwell * self.getStepCount()
     
     def startFrequencySweep(self):
         self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.sweepTerm, self.stepDwell))
