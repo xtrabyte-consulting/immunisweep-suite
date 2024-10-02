@@ -29,11 +29,11 @@
 
 
 ### TODO:
-- sweep going weird
 - Space for Amplifier data
 - disconnecting slots?
-- graphs
+- Power graph
 - RF On starts sweep
 - Disable Stop Sweep button when it's finished
 - Mess with Gains (Not very tightly bound) ( Perhaps make a Settings UI)
 - Stop setting power if RF is off after sweep
+- Reset After successful sweep
