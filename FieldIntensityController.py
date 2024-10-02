@@ -439,9 +439,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_rfOutState.setPixmap(scaledPixmap)
             self.rfOutOn = True
             self.outputOn = True
-            if self.sweepOn:
-                self.signalGenerator.startFrequencySweep()
-                self.sweepRunning = True
         else:
             self.pushButton_rfOn.setEnabled(True)
             self.pushButton_rfOff.setEnabled(False)
@@ -450,9 +447,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_rfOutState.setPixmap(scaledPixmap)
             self.rfOutOn = False
             self.outputOn = False
-            if self.sweepOn and self.sweepRunning:
-                self.signalGenerator.stopFrequencySweep()
-                self.sweepRunning = False
         self.pidController.clear()
     
     def on_sigGen_instrumentDetected(self, detected: bool):
@@ -500,6 +494,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.toggleSweepUI(enabled=True)
         self.pushButton_startSweep.setEnabled(True)
         self.progressBar_freqSweep.setHidden(True)
+        self.signalGenerator.stopFrequencySweep()
         
     def on_sigGen_sweepStatus(self, percent: float):
         self.lcdNumber_sweepProgress.display(percent)
