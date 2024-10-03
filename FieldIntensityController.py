@@ -84,8 +84,6 @@ class EquipmentLimits():
 class MainWindow(QMainWindow, Ui_MainWindow):
     
     sweepOn = False
-    modulationOn = False
-    rfOutOn = False
     
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -128,8 +126,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.xfieldIntensity = 0.0
         self.yfieldIntensity = 0.0
         self.zfieldIntensity = 0.0
-        self.currentOutputPower = 0.0
-        self.currentOutputFrequency = 30.0
+        self.currentOutputPower = -10.0
+        self.currentOutputFrequency = 100.0
         self.equipmentLimits = EquipmentLimits(0.1, 6000.0, 15.0)
         self.sweepStartTime = time.time()
         self.powerStartTime = time.time()
@@ -167,7 +165,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
         
         # Closed-Loop Power Control
-        self.pidController = PIDController(1.0, 0.3, 0.5)
+        self.pidController = PIDController(0.5, 1.0, 0.1)
         
         # Initiate Plots
         self.plot_widget = QWidget(self)
@@ -177,10 +175,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.power_plot_widget = QWidget(self)
         self.field_plot = PowerPlot(self.power_plot_widget, width=4, height=3, dpi=100)
         self.gridLayout_powerPlot.addWidget(self.field_plot)
-        #self.intensityPlot = PowerPlot()
-        #self.graphicsView_powerAndField.setScene(self.intensityPlot)
-        #self.frequencyPlot = PowerPlot(title="Frequency", labels={'left': "Frequency (dBm)", 'bottom': 'Time (sec)'})
-        #self.graphicsView_frequencySweep.setScene(self.frequencyPlot)
+
         self.doubleSpinBox_sweepTerm.setValue(0.01)
         self.spinBox_startFreq.setValue(100.0)
         self.spinBox_stopFreq.setValue(1000.0)
@@ -384,9 +379,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sender = self.sender()
         on = sender == self.pushButton_modulationOn
         self.signalGenerator.setModulationState(on)
-        #TODO: Move To Signal
-        self.pushButton_modulationOff.setEnabled(on)
-        self.pushButton_modulationOn.setEnabled(not on)    
         
     def displayAlert(self, text):
         self.alert = QMessageBox()
@@ -405,7 +397,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
         self.measuredFieldIntensity = composite
         self.updateFieldStrengthUI(x, y, z, composite)
-        if self.sweepOn or self.outputOn:
+        if self.outputOn:
             output = self.pidController.calculate(composite)
             #print("PID Out: " + str(output))
             if output > self.equipmentLimits.max_power:
@@ -424,16 +416,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lcdNumber_xMag.display(x)
         self.lcdNumber_yMag.display(y)
         self.lcdNumber_zMag.display(z)
-        # TODO: Plot on different lines
-        #self.intensityPlot.plotData(QTime.currentTime(), composite)
-        #self.intensityPlot.plotData(QTime.currentTime(), x)
-        #self.intensityPlot.plotData(QTime.currentTime(), y)
-        #self.intensityPlot.plotData(QTime.currentTime(), z)
         self.measuredFieldIntensity = composite
         self.xfieldIntensity = x
         self.yfieldIntensity = y
         self.zfieldIntensity = z
-        #self.field_plot.update_plot(time.time - self.powerStartTime, composite, x, y, z)
         
     def update_field_data_plot(self):
         self.field_plot.update_plot(time.time() - self.powerStartTime, setpoint = self.pidController.getTargetValue(), composite=self.measuredFieldIntensity, x=self.xfieldIntensity, y=self.yfieldIntensity, z=self.zfieldIntensity)
@@ -452,25 +438,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
+            self.outputOn = True
             self.pushButton_rfOn.setEnabled(False)
             self.pushButton_rfOff.setEnabled(True)
             pixmap = QPixmap('broadcast-on.png')
             scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
             self.label_rfOutState.setPixmap(scaledPixmap)
-            self.rfOutOn = True
-            self.outputOn = True
             self.powerStartTime = time.time()
             self.field_timer = QTimer(self)
             self.field_timer.timeout.connect(self.update_field_data_plot)
             self.field_timer.start(100)  # Update every 100 ms
         else:
+            self.outputOn = False
             self.pushButton_rfOn.setEnabled(True)
             self.pushButton_rfOff.setEnabled(False)
             pixmap = QPixmap('broadcast-off.png')
             scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
             self.label_rfOutState.setPixmap(scaledPixmap)
-            self.rfOutOn = False
-            self.outputOn = False
             self.field_timer.stop()
         self.pidController.clear()
     
@@ -491,15 +475,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         model = identity[1]
         serial = identity[2]
         self.label_sigGenName.setText(company + ' ' + model + ' Serial: ' + serial)
-        #self.label_sigGenName.setText(''.join(message.split(',')))
         pixmap = QPixmap('AgilentN5181A.png')
         scaledPixmap = pixmap.scaled(275, 128, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_sigGen.setPixmap(scaledPixmap)
+        # Initialize sig gen to match UI
+        self.signalGenerator.setRFOut(False)
+        self.signalGenerator.setModulationState(False)
+        self.signalGenerator.setFrequency(100.0)
+        self.signalGenerator.setPower(-10.0)
         
     def on_sigGen_frequencySet(self, frequency: float):
         frequency /= 1000000.0
-        #self.frequencyPlot.plotData(QTime.currentTime(), frequency)
-        #self.frequency_plot_widget.update_plot(time.time() - self.sweepStartTime, frequency)
         self.currentOutputFrequency = frequency
         self.lcdNumber_freqOut.display(round(frequency, 9))
         
@@ -511,7 +497,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_sigGen_powerSet(self, power: float):
         self.currentOutputPower = power
         self.lcdNumber_powerOut.display(power)
-        #self.intensityPlot.plotData(QTime.currentTime(), power)
     
     def on_sigGen_sweepFinished(self):
         self.sweepRunning = False
@@ -534,26 +519,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_modFreq.disconnect(self.spinBox_modFreq_valueChanged)
         self.spinBox_modFreq.setValue(frequency)
         self.spinBox_modFreq.valueChanged.connect(self.spinBox_modFreq_valueChanged)
-            
-    def on_sigGen_modSubStateSet(self, modType: int, state: bool):
-        if state:
-            if self.modulationOn:
-                self.label_modulationState.setText('On')
-            if modType == Modulation.AM.value:
-                self.label_modulationType.setText('Amplitude Modulation')
-                self.modulationType = Modulation.AM
-            elif modType == Modulation.FM.value:
-                self.label_modulationType.setText('Frequency Modulation')
-                self.modulationType = Modulation.FM
-            elif modType == Modulation.PM.value:
-                self.label_modulationType.setText('Phase Modulation')
-                self.modulationType = Modulation.PM
-                
+    
     def on_sigGen_modDepthSet(self, depth: float):
         self.spinBox_modDepth.disconnect(self.spinBox_modDepth_valueChanged)
         self.spinBox_modDepth.setValue(depth)
         self.spinBox_modDepth.valueChanged.connect(self.spinBox_modDepth_valueChanged)
-        
+    
     def on_sigGen_amTypeSet(self, linear: bool):
         if linear:
             self.label_modUnit.setText('%')
