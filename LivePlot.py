@@ -96,6 +96,15 @@ class PowerPlot(FigureCanvas):
         self.y_data.append(y)
         self.z_data.append(z)
         
+        if (time > self.ax.get_xlim()[1]):
+            self.time_data.pop(0)
+            self.setpoint_data.pop(0)
+            self.composite_data.pop(0)
+            self.x_data.pop(0)
+            self.y_data.pop(0)
+            self.z_data.pop(0)
+            self.ax.set_xlim(self.time_data[0], self.time_data[-1] + 1)
+            
         self.line1.set_data(self.time_data, self.setpoint_data)
         self.line2.set_data(self.time_data, self.composite_data)
         self.line3.set_data(self.time_data, self.x_data)
