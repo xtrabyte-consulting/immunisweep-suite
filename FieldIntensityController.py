@@ -57,7 +57,7 @@ class PIDController():
         derivative = error - self.prev_error
         output = (self.Kp * error) + (self.Ki * self.integral) + (self.Kd * derivative)
         self.prev_error = error
-        #print(f"Current Field: {current_field}, Error: {error}, Integral: {self.integral}, Derivative: {derivative}, Output: {output}")
+        print(f"Current Field: {current_field}, Error: {error}, Integral: {self.integral}, Derivative: {derivative}, Output: {output}")
         return output
     
     def clear(self):
@@ -249,7 +249,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
         self.pidController.setTargetValue(float(target))
-        self.field_plot.rescale_plot(0.0, self.signalGenerator.getSweepTime(), 0.0, (self.pidController.getTargetValue() * 2.0))
+        self.field_plot.rescale_plot(0.0, self.signalGenerator.getSweepTime(), 0.0, (self.pidController.getTargetValue() * 3.0))
     
     def on_pushButton_rfState_pressed(self):
         sender = self.sender()
@@ -485,7 +485,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Initialize sig gen to match UI
         self.signalGenerator.setRFOut(False)
         self.signalGenerator.setModulationState(False)
-        self.signalGenerator.setFrequency(100.0)
+        self.signalGenerator.setStartFrequency(100.0)
+        self.signalGenerator.setStopFrequency(1000.0)
+        self.signalGenerator.setFrequency(100.0, Frequency.MHz.value)
         self.signalGenerator.setPower(-10.0)
         
     def on_sigGen_frequencySet(self, frequency: float):
