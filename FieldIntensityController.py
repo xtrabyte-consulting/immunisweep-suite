@@ -447,22 +447,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
-            self.outputOn = True
-            self.pushButton_rfOn.setEnabled(False)
-            self.pushButton_rfOff.setEnabled(True)
             pixmap = QPixmap('broadcast-on.png')
-            scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
-            self.label_rfOutState.setPixmap(scaledPixmap)
             self.powerStartTime = time.time()
             self.field_timer.start(100)  # Update every 100 ms
         else:
-            self.outputOn = False
-            self.pushButton_rfOn.setEnabled(True)
-            self.pushButton_rfOff.setEnabled(False)
             pixmap = QPixmap('broadcast-off.png')
-            scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
-            self.label_rfOutState.setPixmap(scaledPixmap)
             self.field_timer.stop()
+        scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_rfOutState.setPixmap(scaledPixmap)
+        self.outputOn = on
+        self.pushButton_rfOn.setEnabled(not on)
+        self.pushButton_rfOff.setEnabled(on)
         self.pidController.clear()
     
     def on_sigGen_instrumentDetected(self, detected: bool):
