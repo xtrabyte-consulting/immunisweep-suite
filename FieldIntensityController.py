@@ -114,7 +114,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signalGenerator.modStateSet.connect(self.on_sigGen_modStateSet)
         self.signalGenerator.modFreqSet.connect(self.on_sigGen_modFrequencySet)
         self.signalGenerator.amTypeSet.connect(self.on_sigGen_amTypeSet)
-        self.signalGenerator.modSubStateSet.connect(self.on_sigGen_modSubStateSet)
         self.signalGenerator.modDepthSet.connect(self.on_sigGen_modDepthSet)
         
         # Initialize State
@@ -539,10 +538,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.stepDwellBox.setDisabled(state)
         self.stepCountBox.setDisabled(state)
     
-    def disableModButtons(self, state: bool):
-        self.amDepthBox.setDisabled(state)
-        self.amFreqBox.setDisabled(state)
-    
     def on_sweepOffButton_toggled(self):
         if self.sweepOffButton.isChecked():
             self.sweepOn = False
@@ -550,41 +545,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.sweepOn = True
             self.disableSweepButtons(False)
-        
-    def on_ampModButton_toggled(self):
-        if self.ampModButton.isChecked():
-            self.modulationOn = True
-            self.disableModButtons(False)
-            self.signalGenerator.setModulationType(True)
-        else:
-            self.modulationOn = False
-            self.disableModButtons(True)
-            self.signalGenerator.setModulationState(False)
-            
-    def on_phaseModButton_toggled(self):
-        if self.phaseModButton.isChecked():
-            self.modulationOn = True
-            self.disableModButtons(False)
-            self.signalGenerator.setModulationType(False)
-        else:
-            self.modulationOn = False
-            self.disableModButtons(True)
-            self.signalGenerator.setModulationState(False)
-            
-    def on_modOffButton_toggled(self):
-        if self.modOffButton.isChecked():
-            self.modulationOn = False
-            self.disableModButtons(True)
-            self.signalGenerator.setModulationState(False)
-        else:
-            self.modulationOn = True
-            self.disableModButtons(False)
-            self.signalGenerator.setModulationState(True)
-            
-    def calculateSweepStepCount(self, start: float, stop: float, term: float) -> int:
-        freq_log = math.log(stop / start)
-        term_log = math.log(1.0 + term)
-        return int(math.ceil(freq_log / term_log))
     
     def closeEvent(self, event):
         self.fieldProbe.stop()
