@@ -327,6 +327,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_plot.rescale_plot(0.0, self.signalGenerator.getSweepTime(), 0.0, (self.pidController.getTargetValue() * 2.0))
     
     def on_pushButton_startSweep_pressed(self):
+        self.frequency_plot_widget.clear_plot()
         self.sweepStartTime = time.time()
         self.sweepRunning = True
         self.signalGenerator.setRFOut(True)
@@ -447,6 +448,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
+            self.field_plot.clear_plot()
             pixmap = QPixmap('broadcast-on.png')
             self.powerStartTime = time.time()
             self.field_timer.start(100)  # Update every 100 ms

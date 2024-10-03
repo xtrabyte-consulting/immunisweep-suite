@@ -20,6 +20,10 @@ class FrequencyPlot(FigureCanvas):
         
         self.line, = self.ax.plot(self.x_data, self.y_data, '-g')
         
+        self.ax.set_xlabel('Time (s)')
+        self.ax.set_ylabel('Frequency (Hz)')
+        self.ax.set_title('Frequency Sweep')
+        
 
     def init_plot(self, x_min: float = 0.0, x_max: float = 100.0, y_min: float = 0.0, y_max: float = 500.0):
         print("Initializing plot: x_min = {}, x_max = {}, y_min = {}, y_max = {}".format(x_min, x_max, y_min, y_max))
@@ -28,9 +32,6 @@ class FrequencyPlot(FigureCanvas):
         self.line.set_data(self.x_data, self.y_data)
         self.ax.relim()
         self.ax.autoscale_view()
-        self.ax.set_xlabel('Time (s)')
-        self.ax.set_ylabel('Frequency (Hz)')
-        self.ax.set_title('Frequency Sweep')
         self.draw_idle()
         return self.line,
 
@@ -42,6 +43,16 @@ class FrequencyPlot(FigureCanvas):
         self.ax.relim()
         self.ax.autoscale_view()
 
+        self.draw_idle()
+        return self.line,
+    
+    def clear_plot(self):
+        print("Clearing plot")
+        self.x_data.clear()
+        self.y_data.clear()
+        self.line.set_data(self.x_data, self.y_data)
+        self.ax.relim()
+        self.ax.autoscale_view()
         self.draw_idle()
         return self.line,
     
@@ -82,6 +93,22 @@ class PowerPlot(FigureCanvas):
         print("Rescaling plot: x_min = {}, x_max = {}, y_min = {}, y_max = {}".format(x_min, x_max, y_min, y_max))
         self.ax.set_xlim(x_min, x_max)
         self.ax.set_ylim(y_min, y_max)
+        self.ax.relim()
+        self.ax.autoscale_view()
+        self.draw_idle()
+        return self.line1, self.line2, self.line3, self.line4, self.line5
+    
+    def clear_plot(self):
+        print("Clearing plot")
+        self.time_data.clear()
+        self.setpoint_data.clear()
+        self.composite_data.clear()
+        self.x_data.clear()
+        self.y_data.clear()
+        self.z_data.clear()
+        
+        self.ax.set_xlim(0, self.ax.get_xlim()[1] - self.ax.get_xlim()[0])
+        self.ax.set_ylim(0, 10)
         self.ax.relim()
         self.ax.autoscale_view()
         self.draw_idle()
