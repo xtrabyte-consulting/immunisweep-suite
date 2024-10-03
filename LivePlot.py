@@ -36,7 +36,7 @@ class FrequencyPlot(FigureCanvas):
         return self.line,
 
     def update_plot(self, x: float, y: float):
-        print("Updating plot: x = {}, y = {}".format(x, y))
+        #print("Updating plot: x = {}, y = {}".format(x, y))
         self.x_data.append(x)
         self.y_data.append(y)
         self.line.set_data(self.x_data, self.y_data)
@@ -108,14 +108,13 @@ class PowerPlot(FigureCanvas):
         self.z_data.clear()
         
         self.ax.set_xlim(0, self.ax.get_xlim()[1] - self.ax.get_xlim()[0])
-        self.ax.set_ylim(0, 10)
         self.ax.relim()
         self.ax.autoscale_view()
         self.draw_idle()
         return self.line1, self.line2, self.line3, self.line4, self.line5
 
     def update_plot(self, time: float, setpoint: float, composite: float, x: float, y: float, z: float):
-        print("Updating plot: time = {}, composite = {}, x = {}, y = {}, z = {}".format(time, setpoint, composite, x, y, z))
+        #print("Updating plot: time = {}, composite = {}, x = {}, y = {}, z = {}".format(time, setpoint, composite, x, y, z))
         self.time_data.append(time)
         self.setpoint_data.append(setpoint)
         self.composite_data.append(composite)
@@ -130,7 +129,7 @@ class PowerPlot(FigureCanvas):
             self.x_data.pop(0)
             self.y_data.pop(0)
             self.z_data.pop(0)
-            self.ax.set_xlim(self.time_data[0], self.time_data[-1] + 1)
+            self.ax.set_xlim(self.time_data[0], self.time_data[-1] + 0.1)
             
         self.line1.set_data(self.time_data, self.setpoint_data)
         self.line2.set_data(self.time_data, self.composite_data)
