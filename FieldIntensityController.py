@@ -126,7 +126,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.output_power = -10.0
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
-        self.distance = 1.5
+        self.distance = 0.1
         self.equipment_limits = EquipmentLimits(0.1, 6000.0, 15.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
@@ -164,7 +164,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
         
         # Closed-Loop Power Control
-        self.pid_controller = PIDController(1.0, 0.0, 0.0)
+        self.pid_controller = PIDController(2.0, 0.0, 0.0)
         
         # Initiate Plots
         self.sweep_plot_widget = QWidget(self)
@@ -413,7 +413,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.output_on:
             pid_out = self.pid_controller.calculate(composite)
             print("PID Out: " + str(pid_out))
-            output_power = self.calculatePowerOut(pid_out)
+            #output_power = self.calculatePowerOut(pid_out)
+            output_power = self.output_power + pid_out
             if output_power > self.equipment_limits.max_power:
                 output_power = self.equipment_limits.max_power
                 self.label_validSettings.setText('Attempted Invalid Power Setting')
@@ -428,8 +429,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def calculatePowerOut(self, pid_out: float) -> float:
         power_watts = (math.pow(pid_out, 2) * math.pow(self.distance, 2)) / (30.0 * self.antenna_gain)
         power_dbm = 10 * math.log10(power_watts * 1000)
+        if pid_out < 0:
+            power_dbm *= -1
         print(f"Error in dBm: {power_dbm}")
-        return self.output_power + power_dbm
+        return self.output_power + pid_out
     
     def updateFieldStrengthUI(self, x: float, y: float, z: float, composite: float):
         self.lcdNumber_avgStrength.display(composite)
@@ -527,12 +530,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modulation_on = on
     
     def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
-        self.spinBox_modFreq.disconnect(self.spinBox_modFreq_valueChanged)
+        self.spinBox_modFreq.valueChanged.disconnect()
         self.spinBox_modFreq.setValue(frequency)
-        self.spinBox_modFreq.valueChanged.connect(self.spinBox_modFreq_valueChanged)
+        self.spinBox_modFreq.valueChanged[float].connect(self.spinBox_modFreq_valueChanged)
     
     def on_sigGen_modDepthSet(self, depth: float):
-        self.spinBox_modDepth.disconnect(self.spinBox_modDepth_valueChanged)
+        self.spinBox_modDepth.valueChanged.disconnect()
         self.spinBox_modDepth.setValue(depth)
         self.spinBox_modDepth.valueChanged.connect(self.spinBox_modDepth_valueChanged)
     
