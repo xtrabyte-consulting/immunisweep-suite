@@ -442,7 +442,7 @@ class AgilentN5181A(QObject):
     def setAMExpDepth(self, depth: float):
         self.commandQueue.put((SCPI.AMExpDepth, f'{SCPI.AMExpDepth.value} {str(depth)}'))
         
-    def setAMFrequency(self, freq: float, unit: str):
+    def setAMFrequency(self, freq: float):
         # Range: 0.1 -> 20 MHz
         if freq > 20000:
             freq = 20000
