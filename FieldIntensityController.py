@@ -83,8 +83,6 @@ class EquipmentLimits():
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     
-    sweepOn = False
-    
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
@@ -174,6 +172,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.power_plot_widget = QWidget(self)
         self.field_plot = PowerPlot(self.power_plot_widget, width=4, height=3, dpi=100)
         self.gridLayout_powerPlot.addWidget(self.field_plot)
+        
+        # Plot timers
+        self.sweep_timer = QTimer(self)
+        self.sweep_timer.timeout.connect(self.update_sweep_plot)
+        
+        self.field_timer = QTimer(self)
+        self.field_timer.timeout.connect(self.update_field_data_plot)
 
         self.doubleSpinBox_sweepTerm.setValue(0.01)
         self.spinBox_startFreq.setValue(100.0)
@@ -264,6 +269,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_stopFreq.setEnabled(enabled)
         self.spinBox_dwell.setEnabled(enabled)
         self.pushButton_startSweep.setEnabled(enabled)
+        self.pushButton_pauseSweep.setEnabled(not enabled)
+        self.progressBar_freqSweep.setHidden(enabled)
     
     def applyFrequencyLimits(self, freq: float) -> bool:
         print(f"Frequency: {freq}, Type: {type(freq)}, ")
@@ -321,18 +328,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_pushButton_startSweep_pressed(self):
         self.sweepStartTime = time.time()
-        self.sweepOn = True
+        self.sweepRunning = True
         self.signalGenerator.setRFOut(True)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_data)
-        self.timer.start(100)  # Update every 100 ms
+        self.sweep_timer.start(100)  # Update every 100 ms
         self.toggleSweepUI(enabled=False)
-        self.pushButton_pauseSweep.setEnabled(True)
-        self.progressBar_freqSweep.setHidden(False)
         self.signalGenerator.startFrequencySweep()
         
     def on_pushButton_pauseSweep_pressed(self):
+        self.complete_sweep()
+    
+    def complete_sweep(self):    
+        self.sweepRunning = False
+        self.sweep_timer.stop()
+        self.signalGenerator.setRFOut(False)
         self.signalGenerator.stopFrequencySweep()
+        self.pidController.clear()
         self.toggleSweepUI(enabled=True)
                 
     def spinBox_modDepth_valueChanged(self, percent: float):
@@ -444,8 +454,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
             self.label_rfOutState.setPixmap(scaledPixmap)
             self.powerStartTime = time.time()
-            self.field_timer = QTimer(self)
-            self.field_timer.timeout.connect(self.update_field_data_plot)
             self.field_timer.start(100)  # Update every 100 ms
         else:
             self.outputOn = False
@@ -488,7 +496,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.currentOutputFrequency = frequency
         self.lcdNumber_freqOut.display(round(frequency, 9))
         
-    def update_data(self):
+    def update_sweep_plot(self):
         t = time.time() - self.sweepStartTime
         print("Elapsed Time: " + str(t))
         self.frequency_plot_widget.update_plot(time.time() - self.sweepStartTime, self.currentOutputFrequency)
@@ -498,12 +506,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lcdNumber_powerOut.display(power)
     
     def on_sigGen_sweepFinished(self):
-        self.sweepRunning = False
-        self.signalGenerator.setRFOut(False)
-        self.toggleSweepUI(enabled=True)
-        self.pushButton_startSweep.setEnabled(True)
-        self.progressBar_freqSweep.setHidden(True)
-        self.signalGenerator.stopFrequencySweep()
+        self.complete_sweep()
         
     def on_sigGen_sweepStatus(self, percent: float):
         self.lcdNumber_sweepProgress.display(percent)
@@ -532,19 +535,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_sigGen_error(self, message: str):
         self.displayAlert(message)
-    
-    def disableSweepButtons(self, state: bool):
-        self.freqStopBox.setDisabled(state)
-        self.stepDwellBox.setDisabled(state)
-        self.stepCountBox.setDisabled(state)
-    
-    def on_sweepOffButton_toggled(self):
-        if self.sweepOffButton.isChecked():
-            self.sweepOn = False
-            self.disableSweepButtons(True)
-        else:
-            self.sweepOn = True
-            self.disableSweepButtons(False)
     
     def closeEvent(self, event):
         self.fieldProbe.stop()

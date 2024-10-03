@@ -581,7 +581,8 @@ class AgilentN5181A(QObject):
         
     def stopFrequencySweep(self):
         self.runSweep = False
-        self.sweepThread.join()
+        if self.sweepThread.is_alive() and self.sweepThread is not None:
+            self.sweepThread.join()
 
     def sweepLinear(self, start, stop, steps, dwell):
         traversal = stop - start
