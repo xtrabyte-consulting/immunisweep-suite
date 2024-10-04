@@ -45,6 +45,48 @@ class EquipmentLimits():
     def setMaxPower(self, power: float):
         self.max_power = power
 
+class PIDGainsPopUp(QDialog):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.setWindowTitle('PID Gains')
+        
+        layout = QVBoxLayout()
+
+        self.spinbox_Kp = QDoubleSpinBox()
+        self.label_Kp = QLabel("Proportional Gain")
+
+        self.spinbox_Ki = QDoubleSpinBox()
+        self.label_Ki = QLabel("Integral Gain")
+
+        self.spinbox_Kd = QDoubleSpinBox()
+        self.label_Kd = QLabel("Derivative Gain")
+
+        layout.addWidget(self.label_Kp)
+        layout.addWidget(self.spinbox_Kp)
+
+        layout.addWidget(self.label_Ki)
+        layout.addWidget(self.spinbox_Ki)
+
+        layout.addWidget(self.label_Kd)
+        layout.addWidget(self.spinbox_Kd)
+
+        # Add dialog buttons (OK and Cancel)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.save_values)
+        self.button_box.rejected.connect(self.reject)
+
+        layout.addWidget(self.button_box)
+
+        self.setLayout(layout)
+        
+    def save_values(self):
+        # Save the values of the spin boxes to the main window's PID controller gains
+        self.main_window.pid_controller.setGains(self.spinbox_Kp.value(), self.spinbox_Ki.value(), self.spinbox_Kd.value())
+
+        # Close the dialog
+        self.accept()
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     
     def __init__(self, *args, **kwargs):
@@ -106,6 +148,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_targetStrength.valueChanged.connect(self.on_spinBox_targetStrength_valueChanged)
         self.pushButton_rfOn.pressed.connect(self.on_pushButton_rfState_pressed)
         self.pushButton_rfOff.pressed.connect(self.on_pushButton_rfState_pressed)
+        self.pushButton_setGains.pressed.connect(lambda: PIDGainsPopUp(self).exec_())
         
         # Output Frequency Control
 
@@ -128,7 +171,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
         
         # Closed-Loop Power Control
-        self.pid_controller = PIDController(2.0, 0.0, 0.0)
+        self.pid_controller = PIDController(0.5, 0.0, 0.2)
         
         # Initiate Plots
         self.sweep_plot_widget = QWidget(self)
@@ -176,6 +219,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_pushButton_detectFieldProbe_pressed(self):
         self.field_probe.start()
+        
         
     def on_comboBox_amplifier_activated(self, amplifier: str):
         print(f"Amplifier Selected: {amplifier}")
