@@ -322,7 +322,7 @@ class AgilentN5181A(QObject):
         self.stepCount = 100
         self.clearing = False
         self.detected = False
-        self.sweepTerm = 0.01
+        self.sweepTerm = 0.005
     
     def detect(self):
         print('Detecting.')
@@ -401,9 +401,9 @@ class AgilentN5181A(QObject):
         
     def setPower(self, pow: float):
         #print(f'Setting Power: {str(pow)}')
-        if pow > 15.0:
-            pow = 15.0
-            self.error.emit("Power above amplifier maximum input. Setting to 9.9 dBm")
+        if pow > 0.0:
+            pow = 0.0
+            self.error.emit("Power above amplifier maximum input. Setting to 0.0 dBm")
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
     def setModulationType(self, mod):

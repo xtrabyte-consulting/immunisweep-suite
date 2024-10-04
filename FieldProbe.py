@@ -148,7 +148,7 @@ class ETSLindgrenHI6006(QObject):
         self.battery_fail = False
         self.command_queue = queue.Queue()
         self.info_interval = 2.0
-        self.data_interval = 0.1
+        self.data_interval = 0.0005
         self.stop_probe_event = threading.Event()
     
     def commandToSignal(self, command: SerialCommand) -> pyqtSignal:

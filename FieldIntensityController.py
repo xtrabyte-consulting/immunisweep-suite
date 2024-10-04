@@ -472,7 +472,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.field_plot.clear_plot()
             pixmap = QPixmap('broadcast-on.png')
             self.power_start_time = time.time()
-            self.field_timer.start(100)  # Update every 100 ms
+            self.field_timer.start(10)  # Update every 100 ms
         else:
             pixmap = QPixmap('broadcast-off.png')
             self.field_timer.stop()
