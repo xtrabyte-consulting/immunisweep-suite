@@ -19,8 +19,8 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>1470</width>
-      <height>790</height>
+      <width>1471</width>
+      <height>861</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout_2">
@@ -197,6 +197,31 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="pushButton_setGains">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>216</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>216</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Set Gains</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item row="0" column="0">
@@ -204,9 +229,7 @@
        <item row="4" column="1">
         <widget class="QLabel" name="label_sigGenStats">
          <property name="text">
-          <string>Power Out (Max) = +10 dBm
-Frequency (Low) = 0.1 MHz
-Frequency (High) = 6.0 GHz</string>
+          <string>Power Out (Max) = +15 dBm</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
@@ -517,6 +540,14 @@ Frequency (High) = 6.0 GHz</string>
          </property>
         </widget>
        </item>
+       <item row="5" column="1">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Frequency (Low) = 0.1 MHz
+Frequency (High) = 6.0 GHz</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item row="0" column="1">
@@ -751,8 +782,22 @@ Frequency (High) = 6.0 GHz</string>
        </item>
        <item row="16" column="1">
         <widget class="QLabel" name="label_antennaStats">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>35</height>
+          </size>
+         </property>
          <property name="text">
-          <string/>
+          <string>
+
+</string>
          </property>
         </widget>
        </item>
@@ -792,6 +837,24 @@ Frequency (High) = 6.0 GHz</string>
        </item>
        <item row="13" column="0">
         <widget class="QLabel" name="label_8">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>20</height>
+          </size>
+         </property>
          <property name="text">
           <string>Amplifier</string>
          </property>
@@ -872,7 +935,7 @@ Frequency (High) = 6.0 GHz</string>
          <property name="minimumSize">
           <size>
            <width>204</width>
-           <height>16</height>
+           <height>20</height>
           </size>
          </property>
          <property name="maximumSize">
@@ -888,6 +951,24 @@ Frequency (High) = 6.0 GHz</string>
        </item>
        <item row="15" column="0">
         <widget class="QLabel" name="label_9">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>20</height>
+          </size>
+         </property>
          <property name="text">
           <string>Antenna</string>
          </property>
@@ -1022,8 +1103,23 @@ Frequency (High) = 6.0 GHz</string>
        </item>
        <item row="14" column="1">
         <widget class="QLabel" name="label_amplifierStats">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>45</height>
+          </size>
+         </property>
          <property name="text">
-          <string/>
+          <string>
+
+
+</string>
          </property>
         </widget>
        </item>
@@ -1766,6 +1862,12 @@ Frequency (High) = 6.0 GHz</string>
       <layout class="QGridLayout" name="gridLayout_powerPlot">
        <item row="0" column="0">
         <widget class="QLabel" name="label_modPlotTitle">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="text">
           <string>Output Power and Field</string>
          </property>
