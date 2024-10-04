@@ -10,6 +10,7 @@ class PIDController():
         self.current_field = 0.0
     
     def setGains(self, Kp: float, Ki: float, Kd: float):
+        print(f"PID gains set to: Kp = {Kp}, Ki = {Ki}, Kd = {Kd}")
         self.Kp = Kp
         self.Ki = Ki
         self.Kd = Kd
