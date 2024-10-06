@@ -795,9 +795,7 @@ Frequency (High) = 6.0 GHz</string>
           </size>
          </property>
          <property name="text">
-          <string>
-
-</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -885,6 +883,11 @@ Frequency (High) = 6.0 GHz</string>
          <item>
           <property name="text">
            <string>MC ZVE8G</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>TBMA4</string>
           </property>
          </item>
         </widget>
@@ -989,6 +992,11 @@ Frequency (High) = 6.0 GHz</string>
          <item>
           <property name="text">
            <string>EMCO 3155</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Generic</string>
           </property>
          </item>
         </widget>
@@ -1116,10 +1124,7 @@ Frequency (High) = 6.0 GHz</string>
           </size>
          </property>
          <property name="text">
-          <string>
-
-
-</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -1135,6 +1140,20 @@ Frequency (High) = 6.0 GHz</string>
          </property>
          <property name="text">
           <string>Valid</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0">
+        <widget class="QLabel" name="label_amplifierIcon">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="0">
+        <widget class="QLabel" name="label_antennaIcon">
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>

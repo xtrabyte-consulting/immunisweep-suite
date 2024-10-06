@@ -153,7 +153,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
         self.distance = 0.1
-        self.equipment_limits = EquipmentLimits(0.1, 6000.0, 10.0)
+        self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
         
@@ -245,37 +245,60 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(f"Amplifier Selected: {amplifier}")
         if amplifier == 'AR 25A250AMB':
             self.equipment_limits.setMaxPower(0.0)
-            self.equipment_limits.setMinFrequency(1.0)
-            self.equipment_limits.setMaxFrequency(300.0)
+            self.equipment_limits.setAmplifierMinFrequency(1.0)
+            self.equipment_limits.setAmplifierMaxFrequency(300.0)
             self.label_amplifierStats.setText('Min Freq: 1 MHz\nMax Freq: 300 MHz\nPower In: 0 dBm')
         elif amplifier == 'IFI SMX25':
             self.equipment_limits.setMaxPower(0.0)
-            self.equipment_limits.setMinFrequency(300.0)
-            self.equipment_limits.setMaxFrequency(1000.0)
+            self.equipment_limits.setAmplifierMinFrequency(300.0)
+            self.equipment_limits.setAmplifierMaxFrequency(1000.0)
             self.label_amplifierStats.setText('Min Freq: 300 MHz\nMax Freq: 1000 MHz\nPower In: 0 dBm')
         elif amplifier == 'IFI S3110':
-            self.equipment_limits.setMaxPower(10.0)
-            self.equipment_limits.setMinFrequency(800.0)
-            self.equipment_limits.setMaxFrequency(3000.0)
+            self.equipment_limits.setMaxPower(0.0)
+            self.equipment_limits.setAmplifierMinFrequency(800.0)
+            self.equipment_limits.setAmplifierMaxFrequency(3000.0)
             self.label_amplifierStats.setText('Min Freq: 800 MHz\nMax Freq: 3000 MHz\nPower In: 0 dBm')
         elif amplifier == 'MC ZVE8G':
             self.equipment_limits.setMaxPower(0.0)
-            self.equipment_limits.setMinFrequency(2000.0)
-            self.equipment_limits.setMaxFrequency(8000.0)
+            self.equipment_limits.setAmplifierMinFrequency(2000.0)
+            self.equipment_limits.setAmplifierMaxFrequency(8000.0)
             self.label_amplifierStats.setText('Min Freq: 2000 MHz\nMax Freq: 8000 MHz\nPower In: 0 dBm')
+        elif amplifier == 'Generic':
+            self.equipment_limits.setMaxPower(10.0)
+            self.equipment_limits.setAmplifierMinFrequency(700.0)
+            self.equipment_limits.setAmplifierMaxFrequency(3500.0)
+            self.label_amplifierStats.setText('Min Freq: 0.1 MHz\nMax Freq: 6000 MHz\nPower In: 10 dBm')
+        elif amplifier == '--Please Select--':
+            self.pushButton_startSweep.setEnabled(False)
+            self.pushButton_rfOn.setEnabled(False)
+            return
+        self.applyFrequencyLimits(self.spinBox_startFreq.value())
+        self.applyFrequencyLimits(self.spinBox_stopFreq.value())
+        
             
     def on_comboBox_antenna_activated(self, antenna: str):
         print(f"Antenna Selected: {antenna}")
         if antenna == 'ETS 3143B':
-            self.equipment_limits.setMinFrequency(30.0)
-            self.equipment_limits.setMaxFrequency(3000.0)
+            self.equipment_limits.setAntennaMinFrequency(30.0)
+            self.equipment_limits.setAntennaMaxFrequency(3000.0)
             self.antenna_gain = 5.0
             self.label_antennaStats.setText('Min Freq: 30 MHz\nMax Freq: 3000 MHz')
         elif antenna == 'EMCO 3155':
-            self.equipment_limits.setMinFrequency(1000.0)
-            self.equipment_limits.setMaxFrequency(18000.0)
+            self.equipment_limits.setAntennaMinFrequency(1000.0)
+            self.equipment_limits.setAntennaMaxFrequency(18000.0)
             self.antenna_gain = 5.0
             self.label_antennaStats.setText('Min Freq: 1 GHz\nMax Freq: 18 GHz')
+        elif antenna == 'TBMA4':
+            self.equipment_limits.setAntennaMinFrequency(1000.0)
+            self.equipment_limits.setAntennaMaxFrequency(6000.0)
+            self.antenna_gain = 9.0
+            self.label_antennaStats.setText('Min Freq: 0.1 MHz\nMax Freq: 6000 MHz')
+        elif antenna == '--Please Select--':
+            self.pushButton_startSweep.setEnabled(False)
+            self.pushButton_rfOn.setEnabled(False)
+            return
+        self.applyFrequencyLimits(self.spinBox_startFreq.value())
+        self.applyFrequencyLimits(self.spinBox_stopFreq.value())
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
@@ -305,13 +328,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def applyFrequencyLimits(self, freq: float) -> bool:
         print(f"Frequency: {freq}, Type: {type(freq)}, ")
-        if freq < self.equipment_limits.min_freq:
+        if freq < self.equipment_limits.getMinFrequency():
             self.label_validSettings.setText('Invalid Setting: Frequency Too Low')
             self.label_validSettings.setStyleSheet('color: red')
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
             valid = False
-        elif freq > self.equipment_limits.max_freq:
+        elif freq > self.equipment_limits.getMaxFrequency():
             self.label_validSettings.setText('Invalid Setting: Frequency Too High')
             self.label_validSettings.setStyleSheet('color: red')
             self.pushButton_startSweep.setEnabled(False)
