@@ -72,12 +72,15 @@ class PIDGainsPopUp(QDialog):
 
         self.spinbox_Kp = QDoubleSpinBox()
         self.label_Kp = QLabel("Proportional Gain")
+        self.spinbox_Kd.setValue(self.main_window.pid_controller.Kp)
 
         self.spinbox_Ki = QDoubleSpinBox()
         self.label_Ki = QLabel("Integral Gain")
+        self.spinbox_Ki.setValue(self.main_window.pid_controller.Ki)
 
         self.spinbox_Kd = QDoubleSpinBox()
         self.label_Kd = QLabel("Derivative Gain")
+        self.spinbox_Kd.setValue(self.main_window.pid_controller.Kd)
 
         layout.addWidget(self.label_Kp)
         layout.addWidget(self.spinbox_Kp)
