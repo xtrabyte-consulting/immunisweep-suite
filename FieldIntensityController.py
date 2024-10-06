@@ -31,19 +31,36 @@ except ImportError:
 
 class EquipmentLimits():
     
-    def __init__(self, min_freq: float, max_freq: float, max_power: float):
-        self.min_freq = min_freq
-        self.max_freq = max_freq
+    def __init__(self, ant_min_freq: float, amp_min_freq: float, ant_max_freq: float, amp_max_freq: float, max_power: float):
+        self.ant_min_freq = ant_min_freq
+        self.amp_min_freq = amp_min_freq
+        self.ant_max_freq = ant_max_freq
+        self.amp_max_freq = amp_max_freq
         self.max_power = max_power
 
-    def setMinFrequency(self, freq: float):
-        self.min_freq = freq
-
-    def setMaxFrequency(self, freq: float):
-        self.max_freq = freq
+    def setAntennaMinFrequency(self, freq: float):
+        self.ant_min_freq = freq
+        
+    def setAmplifierMinFrequency(self, freq: float):
+        self.amp_min_freq = freq
+        
+    def setAntennaMaxFrequency(self, freq: float):
+        self.ant_max_freq = freq
+        
+    def setAmplifierMaxFrequency(self, freq: float):
+        self.amp_max_freq = freq
 
     def setMaxPower(self, power: float):
         self.max_power = power
+        
+    def getMinFrequency(self):
+        return max(self.ant_min_freq, self.amp_min_freq)
+    
+    def getMaxFrequency(self):
+        return min(self.ant_max_freq, self.amp_max_freq)
+    
+    def getMaxPower(self):
+        return self.max_power
 
 class PIDGainsPopUp(QDialog):
     def __init__(self, main_window):
@@ -133,7 +150,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
         self.distance = 0.1
-        self.equipment_limits = EquipmentLimits(0.1, 6000.0, 15.0)
+        self.equipment_limits = EquipmentLimits(0.1, 6000.0, 10.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
         
@@ -171,7 +188,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
         
         # Closed-Loop Power Control
-        self.pid_controller = PIDController(0.5, 0.0, 0.2)
+        self.pid_controller = PIDController(0.6, 0.0, 0.3) # Good @ 4 V/m with horn
         
         # Initiate Plots
         self.sweep_plot_widget = QWidget(self)
@@ -234,7 +251,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.equipment_limits.setMaxFrequency(1000.0)
             self.label_amplifierStats.setText('Min Freq: 300 MHz\nMax Freq: 1000 MHz\nPower In: 0 dBm')
         elif amplifier == 'IFI S3110':
-            self.equipment_limits.setMaxPower(0.0)
+            self.equipment_limits.setMaxPower(10.0)
             self.equipment_limits.setMinFrequency(800.0)
             self.equipment_limits.setMaxFrequency(3000.0)
             self.label_amplifierStats.setText('Min Freq: 800 MHz\nMax Freq: 3000 MHz\nPower In: 0 dBm')
