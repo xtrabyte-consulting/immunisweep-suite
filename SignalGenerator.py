@@ -400,9 +400,8 @@ class AgilentN5181A(QObject):
         self.commandQueue.put((SCPI.Frequency, f'{SCPI.Frequency.value} {str(freq)} {unit}'))
         
     def setPower(self, pow: float):
-        #print(f'Setting Power: {str(pow)}')
-        if pow > 0.0:
-            pow = 0.0
+        if pow > 15.0:
+            pow = 15.0
             self.error.emit("Power above amplifier maximum input. Setting to 0.0 dBm")
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
