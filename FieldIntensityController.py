@@ -166,29 +166,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Output Power/State Control
         self.spinBox_targetStrength.setRange(0, 10)
         self.spinBox_targetStrength.valueChanged.connect(self.on_spinBox_targetStrength_valueChanged)
+        self.spinBox_targetStrength.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_rfOn.pressed.connect(self.on_pushButton_rfState_pressed)
         self.pushButton_rfOff.pressed.connect(self.on_pushButton_rfState_pressed)
         self.pushButton_setGains.pressed.connect(lambda: PIDGainsPopUp(self).exec_())
         
         # Output Frequency Control
-
         self.spinBox_startFreq.valueChanged[float].connect(self.on_spinBox_startFreq_valueChanged)
+        self.spinBox_startFreq.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.spinBox_stopFreq.valueChanged[float].connect(self.on_spinBox_stopFreq_valueChanged)
+        self.spinBox_stopFreq.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.spinBox_dwell.valueChanged.connect(self.on_spinBox_dwell_valueChanged)
+        self.spinBox_dwell.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.comboBox_dwellUnit.activated.connect(self.on_comboBox_dwellUnit_activated)
+        self.comboBox_dwellUnit.setStyleSheet('QComboBox { color: white; }')
         self.doubleSpinBox_sweepTerm.valueChanged.connect(self.on_spinBox_sweepTerm_valueChanged)
+        self.doubleSpinBox_sweepTerm.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_startSweep.pressed.connect(self.on_pushButton_startSweep_pressed)
         self.pushButton_pauseSweep.pressed.connect(self.on_pushButton_pauseSweep_pressed)
         
         # Output Modulation Control
         self.spinBox_modDepth.valueChanged[float].connect(self.spinBox_modDepth_valueChanged)
-        self.spinBox_modFreq.valueChanged.connect(self.spinBox_modFreq_valueChanged)
+        self.spinBox_modDepth.setStyleSheet('QDoubleSpinBox { color: white; }')
+        self.spinBox_modFreq.valueChanged[float].connect(self.spinBox_modFreq_valueChanged)
+        self.spinBox_modFreq.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_modulationOff.pressed.connect(self.pushButton_modulationState_pressed)
         self.pushButton_modulationOn.pressed.connect(self.pushButton_modulationState_pressed)
         
         # Amplifier and Antenna Selections
         self.comboBox_amplifier.currentIndexChanged[str].connect(self.on_comboBox_amplifier_activated)
+        self.comboBox_amplifier.setStyleSheet('QComboBox { color: white; }')
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
+        self.comboBox_antenna.setStyleSheet('QComboBox { color: white; }')
         
         # Closed-Loop Power Control
         self.pid_controller = PIDController(0.6, 0.0, 0.3) # Good @ 4 V/m with horn
