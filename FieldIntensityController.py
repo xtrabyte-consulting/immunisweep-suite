@@ -72,7 +72,7 @@ class PIDGainsPopUp(QDialog):
 
         self.spinbox_Kp = QDoubleSpinBox()
         self.label_Kp = QLabel("Proportional Gain")
-        self.spinbox_Kd.setValue(self.main_window.pid_controller.Kp)
+        self.spinbox_Kp.setValue(self.main_window.pid_controller.Kp)
 
         self.spinbox_Ki = QDoubleSpinBox()
         self.label_Ki = QLabel("Integral Gain")
@@ -276,13 +276,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.equipment_limits.setMaxPower(10.0)
             self.equipment_limits.setAmplifierMinFrequency(700.0)
             self.equipment_limits.setAmplifierMaxFrequency(3500.0)
-            self.label_amplifierStats.setText('Min Freq: 0.1 MHz\nMax Freq: 6000 MHz\nPower In: 10 dBm')
+            self.label_amplifierStats.setText('Min Freq: 700 MHz\nMax Freq: 3500 MHz\nPower In: 10 dBm')
         elif amplifier == '--Please Select--':
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
             return
-        self.applyFrequencyLimits(self.spinBox_startFreq.value())
-        self.applyFrequencyLimits(self.spinBox_stopFreq.value())
+        self.applyFrequencyLimits(self.spinBox_startFreq.value(), self.spinBox_stopFreq.value())
         
             
     def on_comboBox_antenna_activated(self, antenna: str):
@@ -297,17 +296,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.equipment_limits.setAntennaMaxFrequency(18000.0)
             self.antenna_gain = 5.0
             self.label_antennaStats.setText('Min Freq: 1 GHz\nMax Freq: 18 GHz')
-        elif antenna == 'TBMA4':
+        elif antenna == 'TekBox TBMA4':
             self.equipment_limits.setAntennaMinFrequency(1000.0)
             self.equipment_limits.setAntennaMaxFrequency(6000.0)
             self.antenna_gain = 9.0
-            self.label_antennaStats.setText('Min Freq: 0.1 MHz\nMax Freq: 6000 MHz')
+            self.label_antennaStats.setText('Min Freq: 1 GHz\nMax Freq: 6 GHz')
         elif antenna == '--Please Select--':
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
             return
-        self.applyFrequencyLimits(self.spinBox_startFreq.value())
-        self.applyFrequencyLimits(self.spinBox_stopFreq.value())
+        self.applyFrequencyLimits(self.spinBox_startFreq.value(), self.spinBox_stopFreq.value())
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
@@ -334,16 +332,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_startSweep.setEnabled(enabled)
         self.pushButton_pauseSweep.setEnabled(not enabled)
         self.progressBar_freqSweep.setHidden(enabled)
-    
-    def applyFrequencyLimits(self, freq: float) -> bool:
-        print(f"Frequency: {freq}, Type: {type(freq)}, ")
-        if freq < self.equipment_limits.getMinFrequency():
+        
+    def applyFrequencyLimits(self, start_freq: float, stop_freq: float) -> bool:
+        print(f"Start Frequency: {start_freq}, Stop Frequency: {stop_freq}, Min: {self.equipment_limits.getMinFrequency()}, Max: {self.equipment_limits.getMaxFrequency()}")
+        if start_freq < self.equipment_limits.getMinFrequency() or stop_freq < self.equipment_limits.getMinFrequency():
             self.label_validSettings.setText('Invalid Setting: Frequency Too Low')
             self.label_validSettings.setStyleSheet('color: red')
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
             valid = False
-        elif freq > self.equipment_limits.getMaxFrequency():
+        elif start_freq > self.equipment_limits.getMaxFrequency() or stop_freq > self.equipment_limits.getMaxFrequency():
             self.label_validSettings.setText('Invalid Setting: Frequency Too High')
             self.label_validSettings.setStyleSheet('color: red')
             self.pushButton_startSweep.setEnabled(False)
@@ -359,15 +357,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
-        valid = self.applyFrequencyLimits(float(freq))
+        valid = self.applyFrequencyLimits(float(freq), self.spinBox_stopFreq.value())
         if valid:
             self.signal_generator.setStartFrequency(float(freq))
+            self.signal_generator.setStopFrequency(self.spinBox_stopFreq.value())
             self.reset_sweep_plot_view()
             
     def on_spinBox_stopFreq_valueChanged(self, freq: float):
-        valid = self.applyFrequencyLimits(float(freq))
+        valid = self.applyFrequencyLimits(self.spinBox_startFreq.value(), float(freq))
         if valid:
             self.signal_generator.setStopFrequency(float(freq))
+            self.signal_generator.setStartFrequency(self.spinBox_startFreq.value())
             self.reset_sweep_plot_view()
 
     def on_spinBox_dwell_valueChanged(self, time: float):

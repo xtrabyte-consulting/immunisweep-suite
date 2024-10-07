@@ -887,7 +887,7 @@ Frequency (High) = 6.0 GHz</string>
          </item>
          <item>
           <property name="text">
-           <string>TBMA4</string>
+           <string>Generic</string>
           </property>
          </item>
         </widget>
@@ -1002,7 +1002,7 @@ Frequency (High) = 6.0 GHz</string>
          </item>
          <item>
           <property name="text">
-           <string>Generic</string>
+           <string>TekBox TBMA4</string>
           </property>
          </item>
         </widget>
