@@ -1,4 +1,12 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
+"""
+This module provides a PyQt5-based GUI application for controlling field intensity using signal generators and field probes.
+It includes classes for managing equipment limits, PID gains, and the main application window.
+Classes:
+    EquipmentLimits: Manages frequency and power limits for antennas and amplifiers.
+    PIDGainsPopUp: A dialog for setting PID controller gains.
+    MainWindow: The main application window for the field intensity controller.
+"""
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -10,6 +18,7 @@ from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency, SignalGe
 from FieldProbe import ETSLindgrenHI6006, FieldProbe
 from LivePlot import FrequencyPlot, PowerPlot
 from PID import PIDController
+from EquipmentLimits import EquipmentLimits
 
 import os
 import sys
@@ -28,39 +37,6 @@ try:
     QtWin.setCurrentProcessExplicitAppUserModelID(myappid)    
 except ImportError:
     pass
-
-class EquipmentLimits():
-    
-    def __init__(self, ant_min_freq: float, amp_min_freq: float, ant_max_freq: float, amp_max_freq: float, max_power: float):
-        self.ant_min_freq = ant_min_freq
-        self.amp_min_freq = amp_min_freq
-        self.ant_max_freq = ant_max_freq
-        self.amp_max_freq = amp_max_freq
-        self.max_power = max_power
-
-    def setAntennaMinFrequency(self, freq: float):
-        self.ant_min_freq = freq
-        
-    def setAmplifierMinFrequency(self, freq: float):
-        self.amp_min_freq = freq
-        
-    def setAntennaMaxFrequency(self, freq: float):
-        self.ant_max_freq = freq
-        
-    def setAmplifierMaxFrequency(self, freq: float):
-        self.amp_max_freq = freq
-
-    def setMaxPower(self, power: float):
-        self.max_power = power
-        
-    def getMinFrequency(self):
-        return max(self.ant_min_freq, self.amp_min_freq)
-    
-    def getMaxFrequency(self):
-        return min(self.ant_max_freq, self.amp_max_freq)
-    
-    def getMaxPower(self):
-        return self.max_power
 
 class PIDGainsPopUp(QDialog):
     def __init__(self, main_window):
@@ -116,7 +92,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         # Field Probe Signal -> Slot Connections
         self.field_probe = ETSLindgrenHI6006()
-        #self.fieldProbe = FieldProbe()
         self.field_probe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.field_probe.identityReceived.connect(self.on_fieldProbe_identityReceived)
         self.field_probe.batteryReceived.connect(self.on_fieldProbe_batteryReceived)
@@ -126,7 +101,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         # Signal Generator Signal -> Slot Connections
         self.signal_generator = AgilentN5181A()
-        #self.signalGenerator = SignalGenerator()
         self.signal_generator.instrumentDetected.connect(self.on_sigGen_instrumentDetected)
         self.signal_generator.instrumentConnected.connect(self.on_sigGen_instrumentConnected)
         self.signal_generator.frequencySet.connect(self.on_sigGen_frequencySet)
