@@ -21,7 +21,7 @@ class FrequencyPlot(FigureCanvas):
         self.line, = self.ax.plot(self.x_data, self.y_data, '-g')
         
         self.ax.set_xlabel('Time (s)')
-        self.ax.set_ylabel('Frequency (Hz)')
+        self.ax.set_ylabel('Frequency (MHz)')
         self.ax.set_title('Frequency Sweep')
         
 
@@ -82,9 +82,9 @@ class PowerPlot(FigureCanvas):
         self.ax.set_ylim(0, 10)
         self.ax.relim()
         self.ax.autoscale_view()
-        self.ax.set_xlabel('Time (s)')
+        self.ax.set_xlabel('Frequency (MHz)')
         self.ax.set_ylabel('E-Field (V/m)')
-        self.ax.set_title('Field Intensity')
+        self.ax.set_title('Field Strength')
         self.ax.legend()
         self.draw_idle()
         

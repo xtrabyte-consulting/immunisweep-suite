@@ -310,7 +310,7 @@ class AgilentN5181A(QObject):
         self.instrument = None
         self.is_running = False
         self.power = 0.0
-        self.frequency = 0.0
+        self.frequency = 100.0
         self.commandQueue = queue.Queue()
         self.write_thread = None
         self.runSweep = False
@@ -602,12 +602,29 @@ class AgilentN5181A(QObject):
     def sweepExponential(self, start, stop, term, dwell):
         current = start
         print(f'Start: {start}, Ratio: {term}, Stop: {stop}')
+        self.setFrequency(current, Frequency.kHz.value)
+        if self.pause_sweep:
+            time.sleep(dwell)
+            self.pause_sweep = False
         while current <= stop and self.runSweep:
-            self.setFrequency(current, Frequency.kHz.value)
-            current = current + (current * term)
-            self.sweepStatus.emit(self.log_percentage(current, start, stop))
+            if self.step_sweep:
+                current = current + (current * term)
+                self.setFrequency(current, Frequency.kHz.value)
+                self.sweepStatus.emit(self.log_percentage(current, start, stop))
+                self.step_sweep = False
+            if self.pause_sweep:
+                time.sleep(dwell)
+                self.pause_sweep = False
+        if self.runSweep:
+            self.setFrequency(stop, Frequency.kHz.value)
             time.sleep(dwell)
         self.sweepFinished.emit()
+        
+    def stepSweep(self):
+        self.step_sweep = True
+        
+    def pauseSweep(self):
+        self.pause_sweep = True
     
     def writeSCPI(self):
         print("Starting SCPI comms loop...")

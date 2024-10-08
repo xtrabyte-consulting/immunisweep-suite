@@ -126,7 +126,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.output_power = -10.0
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
-        self.distance = 0.1
+        self.distance = 1.5
         self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
@@ -283,7 +283,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
-        self.pid_controller.setTargetValue(float(target))
+        self.pid_controller.setTargetValue(float(target) * 1.5)
         self.field_plot.rescale_plot(0.0, self.signal_generator.getSweepTime(), 0.0, (self.pid_controller.getTargetValue() * 3.0))
     
     def on_pushButton_rfState_pressed(self):
@@ -361,7 +361,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def reset_sweep_plot_view(self):
         self.sweep_plot.init_plot(0.0, self.signal_generator.getSweepTime(), self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency())
-        self.field_plot.rescale_plot(0.0, self.signal_generator.getSweepTime(), 0.0, (self.pid_controller.getTargetValue() * 2.0))
+        self.field_plot.rescale_plot(self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency(), 0.0, (self.pid_controller.getTargetValue() * 2.0))
     
     def on_pushButton_startSweep_pressed(self):
         self.sweep_plot.clear_plot()
@@ -445,20 +445,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.measured_field_strength = composite
         self.updateFieldStrengthUI(x, y, z, composite)
         if self.output_on:
-            pid_out = self.pid_controller.calculate(composite)
-            print("PID Out: " + str(pid_out))
-            #output_power = self.calculatePowerOut(pid_out)
-            output_power = self.output_power + pid_out
-            if output_power > self.equipment_limits.max_power:
-                output_power = self.equipment_limits.max_power
-                self.label_validSettings.setText('Attempted Invalid Power Setting')
-                self.label_validSettings.setStyleSheet('color: red')
+            if composite > (self.pid_controller.getTargetValue() * 0.67) and composite < (self.pid_controller.getTargetValue() * 1.33):
+                self.signal_generator.pause_sweep()
+                self.signal_generator.step_sweep()
             else:
-                self.label_validSettings.setText('Valid Settings')
-                self.label_validSettings.setStyleSheet('color: green')
-            if output_power < -110:
-                output_power = -110
-            self.signal_generator.setPower(output_power)
+                pid_out = self.pid_controller.calculate(composite)
+                print("PID Out: " + str(pid_out))
+                output_power = self.output_power + pid_out
+                if output_power > self.equipment_limits.max_power:
+                    output_power = self.equipment_limits.max_power
+                    self.label_validSettings.setText('Attempted Invalid Power Setting')
+                    self.label_validSettings.setStyleSheet('color: red')
+                else:
+                    self.label_validSettings.setText('Valid Settings')
+                    self.label_validSettings.setStyleSheet('color: green')
+                if output_power < -110:
+                    output_power = -110
+                self.signal_generator.setPower(output_power)
             
     def calculatePowerOut(self, pid_out: float) -> float:
         power_watts = (math.pow(pid_out, 2) * math.pow(self.distance, 2)) / (30.0 * self.antenna_gain)
@@ -479,7 +482,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.z_field = z
         
     def update_field_data_plot(self):
-        self.field_plot.update_plot(time.time() - self.power_start_time, setpoint = self.pid_controller.getTargetValue(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
+        self.field_plot.update_plot(self.output_frequency, setpoint = self.pid_controller.getTargetValue(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
     
     def on_fieldProbe_batteryReceived(self, level: int):
         self.label_chargeLevel.setText(f'{str(level)} %')
@@ -544,7 +547,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def update_sweep_plot(self):
         t = time.time() - self.sweep_start_time
-        print("Elapsed Time: " + str(t))
+        print("Elapsed Time: " + str(t) + " Current Frequency: " + str(self.output_frequency))
         self.sweep_plot.update_plot(time.time() - self.sweep_start_time, self.output_frequency)
     
     def on_sigGen_powerSet(self, power: float):
