@@ -195,6 +195,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.doubleSpinBox_sweepTerm.setValue(0.01)
         self.spinBox_startFreq.setValue(100.0)
         self.spinBox_stopFreq.setValue(1000.0)
+        self.comboBox_amplifier.setCurrentIndex(0)
+        self.comboBox_antenna.setCurrentIndex(0)
+        self.label_validSettings.setText('Please Select Antenna and Amplifier')
+        self.label_validSettings.setStyleSheet('color: red')
         
         # Other UI Setup
         self.pushButton_pauseSweep.setEnabled(False)
@@ -510,6 +514,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.output_on = on
         self.pushButton_rfOn.setEnabled(not on)
         self.pushButton_rfOff.setEnabled(on)
+        if self.comboBox_amplifier.currentIndex() == 0 or self.comboBox_antenna.currentIndex() == 0:
+            self.pushButton_startSweep.setEnabled(False)
+            self.pushButton_rfOn.setEnabled(False)
+            self.label_validSettings.setText('Please Select Antenna and Amplifier')
+            self.label_validSettings.setStyleSheet('color: red')
         self.pid_controller.clear()
     
     def on_sigGen_instrumentDetected(self, detected: bool):
