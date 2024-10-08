@@ -213,6 +213,7 @@ class ETSLindgrenHI6006(QObject):
     def readWriteProbe(self):
         last_info_update = time.time()
         last_data_update = time.time()
+        alerted = 0
         while not self.stop_probe_event.is_set() and self.is_running:
             if time.time() - last_data_update >= self.data_interval:
                 self.getFieldStrengthMeasurement()
@@ -223,19 +224,41 @@ class ETSLindgrenHI6006(QObject):
                 last_info_update = time.time()
             if not self.command_queue.empty():
                 serial_command: SerialCommand = self.command_queue.get()
-                self.serial.write(serial_command.command)
-                response = self.serial.read(serial_command.blocksize)
+                try:
+                    self.serial.write(serial_command.command)
+                    response = self.serial.read(serial_command.blocksize)
+                except:
+                    self.serialConnectionError.emit('Serial Communication Error')
+                    break
                 error, message = serial_command.checkForError(response)
                 if error:
                     self.fieldProbeError.emit(message)
                 else:
                     if type(serial_command) == IdentityCommand:
-                        model, revision, serial, calibration = serial_command.parse(message)
+                        try:
+                            model, revision, serial, calibration = serial_command.parse(message)
+                        except:
+                            self.fieldProbeError.emit(f'Error Reading Probe Identity: {message}')
                         self.identityReceived.emit(model, revision, serial, calibration)
                     elif type(serial_command) == CompositeDataCommand:
-                        x, y, z, composite = serial_command.parse(message)
+                        try:
+                            x, y, z, composite = serial_command.parse(message)
+                        except:
+                            self.fieldProbeError.emit(f'Error Reading Field Intensity: {message}')
                         self.fieldIntensityReceived.emit(x, y, z, composite)
+                    elif type(serial_command) == BatteryCommand:
+                        try:
+                            percentage = serial_command.parse(message)
+                        except:
+                            self.fieldProbeError.emit(f'Error Reading Battery Level: {message}')
+                        self.batteryReceived.emit(percentage)
+                    elif type(serial_command) == TemperatureCommand:
+                        try:
+                            temperature = serial_command.parse(message)
+                        except:
+                            self.fieldProbeError.emit(f'Error Reading Temperature: {message}')
+                        self.temperatureReceived.emit(temperature)
                     else:
-                        self.commandToSignal(serial_command).emit(serial_command.parse(message))
+                        self.fieldProbeError.emit('Unknown Command & Response')
                     
                     

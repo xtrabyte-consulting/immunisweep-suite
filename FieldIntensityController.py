@@ -488,10 +488,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_temperature.setText(f'{str(temp)} °F')
     
     def on_fieldProbe_fieldProbeError(self, message: str):
-        self.displayAlert(message)
+        self.displayAlert("ETS-Lindgren HI-6006:" + message)
         
     def on_fieldProbe_serialConnectionError(self, message: str):
-        self.displayAlert(message)
+        self.displayAlert("Probe Connection:" + message)
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
