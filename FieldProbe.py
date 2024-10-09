@@ -237,27 +237,27 @@ class ETSLindgrenHI6006(QObject):
                     if type(serial_command) == IdentityCommand:
                         try:
                             model, revision, serial, calibration = serial_command.parse(message)
+                            self.identityReceived.emit(model, revision, serial, calibration)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Probe Identity: {message}')
-                        self.identityReceived.emit(model, revision, serial, calibration)
                     elif type(serial_command) == CompositeDataCommand:
                         try:
                             x, y, z, composite = serial_command.parse(message)
+                            self.fieldIntensityReceived.emit(x, y, z, composite)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Field Intensity: {message}')
-                        self.fieldIntensityReceived.emit(x, y, z, composite)
                     elif type(serial_command) == BatteryCommand:
                         try:
                             percentage = serial_command.parse(message)
+                            self.batteryReceived.emit(percentage)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Battery Level: {message}')
-                        self.batteryReceived.emit(percentage)
                     elif type(serial_command) == TemperatureCommand:
                         try:
                             temperature = serial_command.parse(message)
+                            self.temperatureReceived.emit(temperature)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Temperature: {message}')
-                        self.temperatureReceived.emit(temperature)
                     else:
                         self.fieldProbeError.emit('Unknown Command & Response')
                     
