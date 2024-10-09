@@ -16,8 +16,8 @@ class PIDController():
         self.Kd = Kd
     
     def setTargetValue(self, setpoint: float):
-        print(f"Desired field set to: {setpoint}")
         self.desired_field = setpoint
+        print(f"Desired floor at: {setpoint}, Target field at: {self.desired_field}")
         
     def getTargetValue(self) -> float:
         return self.desired_field

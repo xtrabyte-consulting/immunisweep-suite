@@ -118,6 +118,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweep_in_progress = False
         self.output_on = False
         self.modulation_on = False
+        self.dwell_complete = True
         self.measured_field_strength = 0.0
         self.target_field_strength = 1.0
         self.x_field = 0.0
@@ -126,7 +127,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.output_power = -10.0
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
-        self.distance = 1.5
+        self.amplifier_gain = 40.0
+        self.distance = 0.1
         self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
@@ -234,26 +236,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.equipment_limits.setMaxPower(0.0)
             self.equipment_limits.setAmplifierMinFrequency(1.0)
             self.equipment_limits.setAmplifierMaxFrequency(300.0)
+            self.amplifier_gain = 45.0
             self.label_amplifierStats.setText('Min Freq: 1 MHz\nMax Freq: 300 MHz\nPower In: 0 dBm')
         elif amplifier == 'IFI SMX25':
             self.equipment_limits.setMaxPower(0.0)
             self.equipment_limits.setAmplifierMinFrequency(300.0)
             self.equipment_limits.setAmplifierMaxFrequency(1000.0)
+            self.amplifier_gain = 45.0
             self.label_amplifierStats.setText('Min Freq: 300 MHz\nMax Freq: 1000 MHz\nPower In: 0 dBm')
         elif amplifier == 'IFI S3110':
             self.equipment_limits.setMaxPower(0.0)
             self.equipment_limits.setAmplifierMinFrequency(800.0)
             self.equipment_limits.setAmplifierMaxFrequency(3000.0)
+            self.amplifier_gain = 45.0
             self.label_amplifierStats.setText('Min Freq: 800 MHz\nMax Freq: 3000 MHz\nPower In: 0 dBm')
         elif amplifier == 'MC ZVE8G':
             self.equipment_limits.setMaxPower(0.0)
             self.equipment_limits.setAmplifierMinFrequency(2000.0)
             self.equipment_limits.setAmplifierMaxFrequency(8000.0)
+            self.amplifier_gain = 45.0
             self.label_amplifierStats.setText('Min Freq: 2000 MHz\nMax Freq: 8000 MHz\nPower In: 0 dBm')
         elif amplifier == 'Generic':
             self.equipment_limits.setMaxPower(10.0)
             self.equipment_limits.setAmplifierMinFrequency(700.0)
             self.equipment_limits.setAmplifierMaxFrequency(3500.0)
+            self.amplifier_gain = 20.0
             self.label_amplifierStats.setText('Min Freq: 700 MHz\nMax Freq: 3500 MHz\nPower In: 10 dBm')
         elif amplifier == '--Please Select--':
             self.pushButton_startSweep.setEnabled(False)
@@ -287,8 +294,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
-        self.pid_controller.setTargetValue(float(target) * 1.5)
-        self.field_plot.rescale_plot(0.0, self.signal_generator.getSweepTime(), 0.0, (self.pid_controller.getTargetValue() * 3.0))
+        self.pid_controller.setTargetValue(float(target))
+        self.field_plot.rescale_plot(self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency(), 0.0, (self.pid_controller.getTargetValue() * 3.0))
     
     def on_pushButton_rfState_pressed(self):
         sender = self.sender()
@@ -365,12 +372,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def reset_sweep_plot_view(self):
         self.sweep_plot.init_plot(0.0, self.signal_generator.getSweepTime(), self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency())
-        self.field_plot.rescale_plot(self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency(), 0.0, (self.pid_controller.getTargetValue() * 2.0))
+        self.field_plot.rescale_plot(self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency(), 0.0, (self.pid_controller.getTargetValue() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
         self.sweep_plot.clear_plot()
         self.sweep_start_time = time.time()
         self.sweep_in_progress = True
+        #self.signal_generator.setPower(self.calculatePowerOut())
+        print("Theoretical Power Out: " + str(self.calculatePowerOut()))
         self.signal_generator.setRFOut(True)
         self.sweep_timer.start(100)  # Update every 100 ms
         self.toggleSweepUI(enabled=False)
@@ -448,13 +457,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
         self.measured_field_strength = composite
         self.updateFieldStrengthUI(x, y, z, composite)
-        if self.output_on:
-            if composite > (self.pid_controller.getTargetValue() * 0.67) and composite < (self.pid_controller.getTargetValue() * 1.33):
-                self.signal_generator.pause_sweep()
-                self.signal_generator.step_sweep()
+        if self.output_on and self.dwell_complete:
+            if composite > (self.pid_controller.getTargetValue()) and composite < (self.pid_controller.getTargetValue() * 1.4):
+                print("Acceptable Field Strength Achieved: " + str(composite))
+                self.dwell_complete = False
+                self.signal_generator.stepSweep()
             else:
+                print("PID Controller Active. Field Strength: " + str(composite))
                 pid_out = self.pid_controller.calculate(composite)
-                print("PID Out: " + str(pid_out))
+                print("PID Out: " + str(pid_out) + " Current Power: " + str(self.output_power))
                 output_power = self.output_power + pid_out
                 if output_power > self.equipment_limits.max_power:
                     output_power = self.equipment_limits.max_power
@@ -465,15 +476,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.label_validSettings.setStyleSheet('color: green')
                 if output_power < -110:
                     output_power = -110
+                print("Setting Power to: " + str(output_power))
                 self.signal_generator.setPower(output_power)
             
-    def calculatePowerOut(self, pid_out: float) -> float:
-        power_watts = (math.pow(pid_out, 2) * math.pow(self.distance, 2)) / (30.0 * self.antenna_gain)
+    def calculatePowerOut(self) -> float:
+        power_watts = (math.pow(self.pid_controller.getTargetValue(), 2) * math.pow(self.distance, 2)) / (30.0 * self.antenna_gain)
         power_dbm = 10 * math.log10(power_watts * 1000)
-        if pid_out < 0:
-            power_dbm *= -1
-        print(f"Error in dBm: {power_dbm}")
-        return self.output_power + pid_out
+        power_dbm -= self.amplifier_gain
+        #print(f"Power in dBm: {power_dbm}")
+        return power_dbm
     
     def updateFieldStrengthUI(self, x: float, y: float, z: float, composite: float):
         self.lcdNumber_avgStrength.display(composite)
@@ -505,7 +516,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.field_plot.clear_plot()
             pixmap = QPixmap('broadcast-on.png')
             self.power_start_time = time.time()
-            self.field_timer.start(10)  # Update every 100 ms
+            self.field_timer.start(100)  # Update every 100 ms
         else:
             pixmap = QPixmap('broadcast-off.png')
             self.field_timer.stop()
@@ -561,12 +572,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_powerSet(self, power: float):
         self.output_power = power
+        print("Power Set: " + str(self.output_power))
         self.lcdNumber_powerOut.display(power)
     
     def on_sigGen_sweepFinished(self):
         self.complete_sweep()
         
     def on_sigGen_sweepStatus(self, percent: float):
+        self.dwell_complete = True
         self.lcdNumber_sweepProgress.display(percent)
         self.progressBar_freqSweep.setValue(int(percent))
         

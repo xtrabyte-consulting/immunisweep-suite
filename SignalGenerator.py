@@ -322,7 +322,9 @@ class AgilentN5181A(QObject):
         self.stepCount = 100
         self.clearing = False
         self.detected = False
-        self.sweepTerm = 0.005
+        self.sweepTerm = 0.01
+        self.pause_sweep = False
+        self.step_sweep = False
     
     def detect(self):
         print('Detecting.')
@@ -403,6 +405,7 @@ class AgilentN5181A(QObject):
         if pow > 15.0:
             pow = 15.0
             self.error.emit("Power above amplifier maximum input. Setting to 0.0 dBm")
+        print(f'Setting Power to: {pow}')
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
     def setModulationType(self, mod):
@@ -486,7 +489,7 @@ class AgilentN5181A(QObject):
     
     def setPMSource(self, internal: bool):
         self.commandQueue.put((SCPI.PMSource, f'{SCPI.PMSource.value} {SCPI.Internal.value if internal else SCPI.External.value}'))
- 
+
     def setPMFrequency(self, freq: float, unit: str = Frequency.kHz.value):
         # Range: 0.1 Hz -> 2MHz
         if unit == Frequency.MHz.value:
@@ -603,21 +606,18 @@ class AgilentN5181A(QObject):
         current = start
         print(f'Start: {start}, Ratio: {term}, Stop: {stop}')
         self.setFrequency(current, Frequency.kHz.value)
-        if self.pause_sweep:
-            time.sleep(dwell)
-            self.pause_sweep = False
         while current <= stop and self.runSweep:
             if self.step_sweep:
+                self.step_sweep = False
+                time.sleep(dwell)
                 current = current + (current * term)
+                print("Stepping to next frequency..." + str(current))
                 self.setFrequency(current, Frequency.kHz.value)
                 self.sweepStatus.emit(self.log_percentage(current, start, stop))
-                self.step_sweep = False
-            if self.pause_sweep:
-                time.sleep(dwell)
-                self.pause_sweep = False
-        if self.runSweep:
-            self.setFrequency(stop, Frequency.kHz.value)
-            time.sleep(dwell)
+                
+        #if self.runSweep:
+        #    self.setFrequency(stop, Frequency.kHz.value)
+        #    time.sleep(dwell)
         self.sweepFinished.emit()
         
     def stepSweep(self):
@@ -634,6 +634,7 @@ class AgilentN5181A(QObject):
                 print("Blocking Loop until command Queue is empty.")
                 self.commandQueue.join()
             else:
+                print("Command queue size: " + str(self.commandQueue.qsize()))
                 command = self.commandQueue.get()
                 commandType = command[0]
                 commandValue = command[1]
@@ -649,6 +650,7 @@ class AgilentN5181A(QObject):
                 elif commandType == SCPI.RFOut:
                     self.rfOutSet.emit(bool(int(state)))
                 elif commandType == SCPI.Power:
+                    print(f'Power: {state}')
                     self.powerSet.emit(float(state))
                 elif commandType == SCPI.Frequency:
                     self.frequencySet.emit(float(state))
