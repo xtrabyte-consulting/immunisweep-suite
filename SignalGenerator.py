@@ -607,6 +607,7 @@ class AgilentN5181A(QObject):
         print(f'Start: {start}, Ratio: {term}, Stop: {stop}')
         self.setFrequency(current, Frequency.kHz.value)
         while current <= stop and self.runSweep:
+            time.sleep(0.1)
             if self.step_sweep:
                 self.step_sweep = False
                 time.sleep(dwell)
