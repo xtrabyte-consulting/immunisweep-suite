@@ -37,11 +37,20 @@ class FieldController(QObject):
         if not self.use_stepper:
             self.pid_controller.setTargetValue(target_field)
             
+    def getTargetField(self) -> float:
+        return self.target_field
+            
     def setStartFrequency(self, start_freq: float):
         self.start_freq = start_freq
         
+    def getStartFrequency(self) -> float:
+        return self.start_freq
+        
     def setStopFrequency(self, stop_freq: float):
         self.stop_freq = stop_freq
+        
+    def getStopFrequency(self) -> float:
+        return self.stop_freq
         
     def setDwellTime(self, dwell_time: float, unit: str):
         if unit == Time.Microsecond.value:
@@ -72,6 +81,7 @@ class FieldController(QObject):
         current_freq = self.start_freq
         # Set the signal generator to low power to start
         self.signal_generator.setPower(self.base_power)
+        self.signal_generator.setRFOut(True)
 
         while current_freq <= self.stop_freq and self.is_sweeping:
             

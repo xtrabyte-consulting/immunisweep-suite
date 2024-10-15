@@ -307,8 +307,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
-        self.pid_controller.setTargetValue(float(target))
-        self.field_plot.rescale_plot(self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency(), 0.0, (self.pid_controller.getTargetValue() * 3.0))
+        self.field_controller.setTargetField(float(target))
+        self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_rfState_pressed(self):
         sender = self.sender()
@@ -361,19 +361,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(f"Spin box value changed: Types: {type(freq)}")
         valid = self.applyFrequencyLimits(float(freq), self.spinBox_stopFreq.value())
         if valid:
-            self.signal_generator.setStartFrequency(float(freq))
-            self.signal_generator.setStopFrequency(self.spinBox_stopFreq.value())
+            self.field_controller.setStartFrequency(float(freq))
+            self.field_controller.setStopFrequency(self.spinBox_stopFreq.value())
             self.reset_sweep_plot_view()
             
     def on_spinBox_stopFreq_valueChanged(self, freq: float):
         valid = self.applyFrequencyLimits(self.spinBox_startFreq.value(), float(freq))
         if valid:
-            self.signal_generator.setStopFrequency(float(freq))
-            self.signal_generator.setStartFrequency(self.spinBox_startFreq.value())
+            self.field_controller.setStopFrequency(float(freq))
+            self.field_controller.setStartFrequency(self.spinBox_startFreq.value())
             self.reset_sweep_plot_view()
 
     def on_spinBox_dwell_valueChanged(self, time: float):
-        self.signal_generator.setStepDwell(float(time), self.comboBox_dwellUnit.currentText())
+        self.field_controller.setDwellTime(float(time), self.comboBox_dwellUnit.currentText())
         self.reset_sweep_plot_view()
             
     def on_comboBox_dwellUnit_activated(self):
@@ -384,12 +384,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_spinBox_sweepTerm_valueChanged(self, term: float):
         print("Sweep Term: " + str(term))
-        self.signal_generator.setSweepTerm(float(term))
+        self.field_controller.setSweepTerm(float(term))
         self.reset_sweep_plot_view()
     
     def reset_sweep_plot_view(self):
-        self.sweep_plot.init_plot(0.0, self.signal_generator.getSweepTime(), self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency())
-        self.field_plot.rescale_plot(self.signal_generator.getStartFrequency(), self.signal_generator.getStopFrequency(), 0.0, (self.pid_controller.getTargetValue() * 3.0))
+        self.sweep_plot.init_plot(0.0, self.field_controller.getSweepTime(), self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency())
+        self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
         self.sweep_plot.clear_plot()
@@ -397,10 +397,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweep_in_progress = True
         #self.signal_generator.setPower(self.calculatePowerOut())
         print("Theoretical Power Out: " + str(self.calculatePowerOut()))
-        self.signal_generator.setRFOut(True)
         self.sweep_timer.start(100)  # Update every 100 ms
         self.toggleSweepUI(enabled=False)
-        self.signal_generator.startFrequencySweep()
+        self.field_controller.start_sweep()
         
     def on_pushButton_pauseSweep_pressed(self):
         self.complete_sweep()
@@ -523,7 +522,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pushButton_rfOn.setEnabled(False)
             self.label_validSettings.setText('Please Select Antenna and Amplifier')
             self.label_validSettings.setStyleSheet('color: red')
-        self.pid_controller.clear()
+        if self.field_controller.pid_controller is not None:
+            self.field_controller.pid_controller.clear()
     
     def on_sigGen_instrumentDetected(self, detected: bool):
         if detected:
@@ -602,8 +602,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def closeEvent(self, event):
         self.field_probe.stop()
         self.signal_generator.stop()
+        self.field_controller_thread.quit()
         del self.field_probe
         del self.signal_generator
+        del self.field_controller
         QApplication.quit()
         sys.exit()
 
