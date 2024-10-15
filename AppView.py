@@ -110,9 +110,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signal_generator.amTypeSet.connect(self.on_sigGen_amTypeSet)
         self.signal_generator.modDepthSet.connect(self.on_sigGen_modDepthSet)
         
-        # Field Controller Signal -> Slot Connections
+        # Create Field Controller nd move it to a QThread
         self.pid_controller = PIDController(0.4, 0.0, 0.0)
         self.field_controller = FieldController(self.signal_generator, self.field_probe, self.pid_controller)
+        self.field_controller_thread = QThread()
+        self.field_controller.moveToThread(self.field_controller_thread)
+        
+        #Start the thread
+        self.field_controller_thread.start()
+        
+        # Connect Field Controller Signals to UI Slots
         self.field_controller.frequencyUpdated.connect(self.on_fieldController_frequencySet)
         self.field_controller.powerUpdated.connect(self.on_fieldController_powerUpdated)
         self.field_controller.fieldUpdated.connect(self.on_fieldController_fieldUpdated)
