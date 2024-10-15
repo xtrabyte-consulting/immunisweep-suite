@@ -406,13 +406,18 @@ class AgilentN5181A(QObject):
             pow = 15.0
             self.error.emit("Power above amplifier maximum input. Setting to 0.0 dBm")
         print(f'Setting Power to: {pow}')
-        self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
-    
-    def getPower(self) -> float:
+        #self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
+        self.instrument.write(f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}')
+        complete = self.instrument.query(SCPI.OperationComplete.value)
+        #if complete:
+        self.power = float(self.instrument.query(f'{SCPI.Power.value}?'))
         return self.power
     
+    def getPower(self) -> float:
+        return float(self.power)
+    
     def getFrequency(self) -> float:
-        return self.frequency
+        return float(self.frequency)
     
     def setModulationType(self, mod):
         if mod == Modulation.AM:
