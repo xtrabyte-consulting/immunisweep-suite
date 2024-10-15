@@ -148,7 +148,11 @@ class ETSLindgrenHI6006(QObject):
         self.battery_fail = False
         self.command_queue = queue.Queue()
         self.info_interval = 2.0
-        self.data_interval = 0.01
+        self.data_interval = 0.001
+        self.composite_field = 0.0
+        self.x_component = 0.0
+        self.y_component = 0.0
+        self.z_component = 0.0
         self.stop_probe_event = threading.Event()
     
     def commandToSignal(self, command: SerialCommand) -> pyqtSignal:
@@ -207,8 +211,11 @@ class ETSLindgrenHI6006(QObject):
     def getTemperature(self):
         self.command_queue.put(TemperatureCommand())
     
-    def getFieldStrengthMeasurement(self):
+    def readFieldStrengthMeasurement(self):
         self.command_queue.put(CompositeDataCommand())
+        
+    def getFieldStrength(self):
+        return self.composite_field, self.x_component, self.y_component, self.z_component
     
     def readWriteProbe(self):
         last_info_update = time.time()
@@ -216,7 +223,7 @@ class ETSLindgrenHI6006(QObject):
         alerted = 0
         while not self.stop_probe_event.is_set() and self.is_running:
             if time.time() - last_data_update >= self.data_interval:
-                self.getFieldStrengthMeasurement()
+                self.readFieldStrengthMeasurement()
                 last_data_update = time.time()
             if time.time() - last_info_update >= self.info_interval:
                 self.getBatteryPercentage()
@@ -243,7 +250,11 @@ class ETSLindgrenHI6006(QObject):
                     elif type(serial_command) == CompositeDataCommand:
                         try:
                             x, y, z, composite = serial_command.parse(message)
-                            self.fieldIntensityReceived.emit(x, y, z, composite)
+                            self.composite_field = composite
+                            self.x_component = x
+                            self.y_component = y
+                            self.z_component = z
+                            #self.fieldIntensityReceived.emit(x, y, z, composite)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Field Intensity: {message}')
                     elif type(serial_command) == BatteryCommand:

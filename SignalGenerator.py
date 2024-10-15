@@ -86,11 +86,11 @@ class SignalGenerator(QObject):
     modCouplingSet = pyqtSignal(int, bool)
     amTypeSet = pyqtSignal(bool)
     modDepthSet = pyqtSignal(float)
-    frequencySet = pyqtSignal(float)
-    powerSet = pyqtSignal(float)
-    rfOutSet = pyqtSignal(bool)
-    sweepFinished = pyqtSignal()
-    sweepStatus = pyqtSignal(float)
+    #frequencySet = pyqtSignal(float)
+    #powerSet = pyqtSignal(float)
+    #rfOutSet = pyqtSignal(bool)
+    #sweepFinished = pyqtSignal()
+    #sweepStatus = pyqtSignal(float)
     
     def __init__(self):
         super().__init__()
@@ -408,6 +408,9 @@ class AgilentN5181A(QObject):
         print(f'Setting Power to: {pow}')
         self.commandQueue.put((SCPI.Power, f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}'))
     
+    def getPower(self) -> float:
+        return self.power
+    
     def setModulationType(self, mod):
         if mod == Modulation.AM:
             self.commandQueue.put((SCPI.PMState, f'{SCPI.PMState.value} {SCPI.Off.value}'))
@@ -652,7 +655,8 @@ class AgilentN5181A(QObject):
                     self.rfOutSet.emit(bool(int(state)))
                 elif commandType == SCPI.Power:
                     print(f'Power: {state}')
-                    self.powerSet.emit(float(state))
+                    #self.powerSet.emit(float(state))
+                    self.power = float(state)
                 elif commandType == SCPI.Frequency:
                     self.frequencySet.emit(float(state))
                 elif commandType == SCPI.ModulationState:
