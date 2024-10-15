@@ -111,8 +111,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signal_generator.modDepthSet.connect(self.on_sigGen_modDepthSet)
         
         # Create Field Controller nd move it to a QThread
-        self.pid_controller = PIDController(0.4, 0.0, 0.0)
-        self.field_controller = FieldController(self.signal_generator, self.field_probe, self.pid_controller)
+        #self.pid_controller = PIDController(0.4, 0.0, 0.0)
+        self.field_controller = FieldController(self.signal_generator, self.field_probe, None)
         self.field_controller_thread = QThread()
         self.field_controller.moveToThread(self.field_controller_thread)
         
@@ -402,11 +402,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_controller.start_sweep()
         
     def on_pushButton_pauseSweep_pressed(self):
+        self.field_controller.stop_sweep()
         self.complete_sweep()
     
     def complete_sweep(self):    
         self.sweep_timer.stop()
-        self.field_controller.stop_sweep()
         self.toggleSweepUI(enabled=True)
                 
     def spinBox_modDepth_valueChanged(self, percent: float):
@@ -467,9 +467,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_fieldProbeName.setText('ETS Lindgren ' + model + ' Serial: ' + serial)
 
     @pyqtSlot(float, float, float, float)
-    def on_fieldController_fieldUpdated(self, x: float, y: float, z: float, composite: float):
+    def on_fieldController_fieldUpdated(self, composite: float, x: float, y: float, z: float):
         self.measured_field_strength = composite
-        self.updateFieldStrengthUI(x, y, z, composite)
+        self.updateFieldStrengthUI(composite, x, y, z)
             
     def calculatePowerOut(self) -> float:
         power_watts = (math.pow(self.pid_controller.getTargetValue(), 2) * math.pow(self.distance, 2)) / (30.0 * self.antenna_gain)
@@ -478,7 +478,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #print(f"Power in dBm: {power_dbm}")
         return power_dbm
     
-    def updateFieldStrengthUI(self, x: float, y: float, z: float, composite: float):
+    def updateFieldStrengthUI(self, composite: float, x: float, y: float, z: float):
         self.lcdNumber_avgStrength.display(composite)
         self.lcdNumber_xMag.display(x)
         self.lcdNumber_yMag.display(y)
@@ -489,7 +489,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.z_field = z
         
     def update_field_data_plot(self):
-        self.field_plot.update_plot(self.output_frequency, setpoint = self.pid_controller.getTargetValue(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
+        self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
     
     def on_fieldProbe_batteryReceived(self, level: int):
         self.label_chargeLevel.setText(f'{str(level)} %')
@@ -522,8 +522,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pushButton_rfOn.setEnabled(False)
             self.label_validSettings.setText('Please Select Antenna and Amplifier')
             self.label_validSettings.setStyleSheet('color: red')
-        if self.field_controller.pid_controller is not None:
-            self.field_controller.pid_controller.clear()
+        self.field_controller.pid_controller.clear()
     
     def on_sigGen_instrumentDetected(self, detected: bool):
         if detected:
@@ -554,7 +553,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signal_generator.setPower(-10.0)
         
     def on_fieldController_frequencySet(self, frequency: float):
-        frequency /= 1000000.0
+        print("Frequency Set: " + str(frequency))
         self.output_frequency = frequency
         self.lcdNumber_freqOut.display(round(frequency, 9))
         
