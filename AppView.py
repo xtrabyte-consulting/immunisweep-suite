@@ -16,6 +16,7 @@ from qt_material import apply_stylesheet
 from MainWindow import Ui_MainWindow
 from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency, SignalGenerator
 from FieldProbe import ETSLindgrenHI6006, FieldProbe
+from FieldController import FieldController
 from LivePlot import FrequencyPlot, PowerPlot
 from PID import PIDController
 from EquipmentLimits import EquipmentLimits
@@ -92,7 +93,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         # Field Probe Signal -> Slot Connections
         self.field_probe = ETSLindgrenHI6006()
-        self.field_probe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         self.field_probe.identityReceived.connect(self.on_fieldProbe_identityReceived)
         self.field_probe.batteryReceived.connect(self.on_fieldProbe_batteryReceived)
         self.field_probe.temperatureReceived.connect(self.on_fieldProbe_temperatureReceived)
@@ -103,16 +103,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signal_generator = AgilentN5181A()
         self.signal_generator.instrumentDetected.connect(self.on_sigGen_instrumentDetected)
         self.signal_generator.instrumentConnected.connect(self.on_sigGen_instrumentConnected)
-        self.signal_generator.frequencySet.connect(self.on_sigGen_frequencySet)
-        self.signal_generator.powerSet.connect(self.on_sigGen_powerSet)
         self.signal_generator.error.connect(self.on_sigGen_error)
         self.signal_generator.rfOutSet.connect(self.on_sigGen_rfOutSet)
-        self.signal_generator.sweepFinished.connect(self.on_sigGen_sweepFinished)
-        self.signal_generator.sweepStatus.connect(self.on_sigGen_sweepStatus)
         self.signal_generator.modStateSet.connect(self.on_sigGen_modStateSet)
         self.signal_generator.modFreqSet.connect(self.on_sigGen_modFrequencySet)
         self.signal_generator.amTypeSet.connect(self.on_sigGen_amTypeSet)
         self.signal_generator.modDepthSet.connect(self.on_sigGen_modDepthSet)
+        
+        # Field Controller Signal -> Slot Connections
+        self.pid_controller = PIDController(0.4, 0.0, 0.0)
+        self.field_controller = FieldController(self.signal_generator, self.field_probe, self.pid_controller)
+        self.field_controller.frequencyUpdated.connect(self.on_fieldController_frequencySet)
+        self.field_controller.powerUpdated.connect(self.on_fieldController_powerUpdated)
+        self.field_controller.fieldUpdated.connect(self.on_fieldController_fieldUpdated)
+        self.field_controller.sweepCompleted.connect(self.on_fieldController_sweepCompleted)
+        self.field_controller.sweepStatus.connect(self.on_fieldController_sweepStatus)
+        self.field_controller.highFieldDetected.connect(self.on_fieldController_highFieldDetected)
         
         # Initialize State
         self.sweep_in_progress = False
@@ -340,6 +346,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             valid = True
         return valid
                 
+    def on_fieldController_highFieldDetected(self):
+        self.displayAlert("High Field Detected. Stopping Sweep and Disabling RF Output.")
+        self.complete_sweep()
+
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
         valid = self.applyFrequencyLimits(float(freq), self.spinBox_stopFreq.value())
@@ -389,11 +399,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.complete_sweep()
     
     def complete_sweep(self):    
-        self.sweep_in_progress = False
         self.sweep_timer.stop()
-        self.signal_generator.setRFOut(False)
-        self.signal_generator.stopFrequencySweep()
-        self.pid_controller.clear()
+        self.field_controller.stop_sweep()
         self.toggleSweepUI(enabled=True)
                 
     def spinBox_modDepth_valueChanged(self, percent: float):
@@ -454,30 +461,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_fieldProbeName.setText('ETS Lindgren ' + model + ' Serial: ' + serial)
 
     @pyqtSlot(float, float, float, float)
-    def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
+    def on_fieldController_fieldUpdated(self, x: float, y: float, z: float, composite: float):
         self.measured_field_strength = composite
         self.updateFieldStrengthUI(x, y, z, composite)
-        if self.output_on and self.dwell_complete:
-            if composite > (self.pid_controller.getTargetValue()) and composite < (self.pid_controller.getTargetValue() * 1.4):
-                print("Acceptable Field Strength Achieved: " + str(composite))
-                self.dwell_complete = False
-                self.signal_generator.stepSweep()
-            else:
-                print("PID Controller Active. Field Strength: " + str(composite))
-                pid_out = self.pid_controller.calculate(composite)
-                print("PID Out: " + str(pid_out) + " Current Power: " + str(self.output_power))
-                output_power = self.output_power + pid_out
-                if output_power > self.equipment_limits.max_power:
-                    output_power = self.equipment_limits.max_power
-                    self.label_validSettings.setText('Attempted Invalid Power Setting')
-                    self.label_validSettings.setStyleSheet('color: red')
-                else:
-                    self.label_validSettings.setText('Valid Settings')
-                    self.label_validSettings.setStyleSheet('color: green')
-                if output_power < -110:
-                    output_power = -110
-                print("Setting Power to: " + str(output_power))
-                self.signal_generator.setPower(output_power)
             
     def calculatePowerOut(self) -> float:
         power_watts = (math.pow(self.pid_controller.getTargetValue(), 2) * math.pow(self.distance, 2)) / (30.0 * self.antenna_gain)
@@ -560,7 +546,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signal_generator.setFrequency(100.0, Frequency.MHz.value)
         self.signal_generator.setPower(-10.0)
         
-    def on_sigGen_frequencySet(self, frequency: float):
+    def on_fieldController_frequencySet(self, frequency: float):
         frequency /= 1000000.0
         self.output_frequency = frequency
         self.lcdNumber_freqOut.display(round(frequency, 9))
@@ -570,16 +556,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print("Elapsed Time: " + str(t) + " Current Frequency: " + str(self.output_frequency))
         self.sweep_plot.update_plot(time.time() - self.sweep_start_time, self.output_frequency)
     
-    def on_sigGen_powerSet(self, power: float):
+    def on_fieldController_powerUpdated(self, power: float):
         self.output_power = power
         print("Power Set: " + str(self.output_power))
         self.lcdNumber_powerOut.display(power)
     
-    def on_sigGen_sweepFinished(self):
+    def on_fieldController_sweepCompleted(self):
         self.complete_sweep()
         
-    def on_sigGen_sweepStatus(self, percent: float):
-        self.dwell_complete = True
+    def on_fieldController_sweepStatus(self, percent: float):
         self.lcdNumber_sweepProgress.display(percent)
         self.progressBar_freqSweep.setValue(int(percent))
         

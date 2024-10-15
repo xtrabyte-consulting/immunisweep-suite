@@ -297,11 +297,11 @@ class AgilentN5181A(QObject):
     modCouplingSet = pyqtSignal(int, bool)
     amTypeSet = pyqtSignal(bool)
     modDepthSet = pyqtSignal(float)
-    frequencySet = pyqtSignal(float)
-    powerSet = pyqtSignal(float)
+    #frequencySet = pyqtSignal(float)
+    #powerSet = pyqtSignal(float)
     rfOutSet = pyqtSignal(bool)
-    sweepFinished = pyqtSignal()
-    sweepStatus = pyqtSignal(float)
+    #sweepFinished = pyqtSignal()
+    #sweepStatus = pyqtSignal(float)
     
     def __init__(self, ip_address: str = '192.168.100.79',  port: int = 5024):
         super().__init__()
@@ -410,6 +410,9 @@ class AgilentN5181A(QObject):
     
     def getPower(self) -> float:
         return self.power
+    
+    def getFrequency(self) -> float:
+        return self.frequency
     
     def setModulationType(self, mod):
         if mod == Modulation.AM:
@@ -658,7 +661,8 @@ class AgilentN5181A(QObject):
                     #self.powerSet.emit(float(state))
                     self.power = float(state)
                 elif commandType == SCPI.Frequency:
-                    self.frequencySet.emit(float(state))
+                    #self.frequencySet.emit(float(state))
+                    self.frequency = float(state)
                 elif commandType == SCPI.ModulationState:
                     self.modStateSet.emit(bool(int(state)))
                 elif commandType == SCPI.AMState:

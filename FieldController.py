@@ -130,3 +130,9 @@ class FieldController(QObject):
                 pid_output = self.pid_controller.calculate(current_field_level)
                 self.signal_generator.setPower(pid_output + current_power)
             self.powerUpdated.emit(current_power)
+            
+    def stop_sweep(self):
+        """Stop the frequency sweep."""
+        self.is_sweeping = False
+        self.signal_generator.setRFOut(False)
+        self.pid_controller.clear()
