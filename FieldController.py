@@ -4,6 +4,7 @@ from SignalGenerator import AgilentN5181A, Frequency, Time
 from PID import PIDController as PID
 from time import sleep
 import math
+from typing import Optional
 
 class FieldController(QObject):
     
@@ -19,14 +20,14 @@ class FieldController(QObject):
         super().__init__()
         self.signal_generator = signal_generator
         self.field_probe = field_probe
-        self.use_stepper = True
-        if pid_controller is not None:
-            self.pid_controller = pid_controller
-            self.use_stepper = False
+        self.use_stepper = False
+        if pid_controller is None:
+            self.pid_controller = PID(0.1, 0.01, 0.01)
+            self.use_stepper = True
         self.is_sweeping = False
         self.target_field = 1.0
         self.threshold = 1.25
-        self.base_power = -40
+        self.base_power = -20
         self.start_freq = 100.0
         self.stop_freq = 1000.0
         self.dwell_time = 0.5
@@ -82,9 +83,10 @@ class FieldController(QObject):
         # Set the signal generator to low power to start
         self.signal_generator.setPower(self.base_power)
         self.signal_generator.setRFOut(True)
+        print(f"Starting sweep from {self.start_freq} to {self.stop_freq} with a step term of {self.sweep_term}")
 
         while current_freq <= self.stop_freq and self.is_sweeping:
-            
+            print(f"Current Frequency: {current_freq}")
             # Set the signal generator frequency
             self.signal_generator.setFrequency(current_freq, Frequency.MHz.value)
             self.sweepStatus.emit(self.log_percentage(current_freq, self.start_freq, self.stop_freq))
@@ -92,11 +94,14 @@ class FieldController(QObject):
             # Emit the signal to update the UI with the new frequency
             self.frequencyUpdated.emit(current_freq)
 
+            print(f"Adjusting power to target level at {current_freq} MHz")
             # Perform closed-loop control to adjust the power
             self.adjust_power_to_target_level()
             
+            print(f"Sleeping for {self.dwell_time} seconds")
             sleep(self.dwell_time)
             
+            print("Power adjusted. Moving to next frequency step.")
             # Reset signal generator to low power
             self.signal_generator.setPower(self.base_power)
 
@@ -110,8 +115,10 @@ class FieldController(QObject):
         """Adjust the power level based on probe readings to return to target field level."""
         while True:
             # Get the current field level from the field probe
+            sleep(0.05)
             current_field_level, x, y, z = self.field_probe.getFieldStrength()
             
+            print(f"Current Field Level: {current_field_level} V/m")
             # Emit signal to update the UI with the field level
             self.fieldUpdated.emit(current_field_level, x, y, z)
             
@@ -125,17 +132,23 @@ class FieldController(QObject):
                 break
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
+                print(f"Field level within threshold: {current_field_level}")
+                current_field_level, x, y, z = self.field_probe.getFieldStrength()
+                self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
             current_power = self.signal_generator.getPower()
             
             if self.use_stepper:
+                print("Using stepper control")
                 # Adjust the power level based on the current field level
                 if current_field_level < self.target_field:
                     current_power += 0.1
                 elif current_field_level > (self.target_field * self.threshold):
                     current_power -= 1
-                self.signal_generator.setPower(current_power)
+                print(f"Setting power to: {current_power}")
+                current_power = self.signal_generator.setPower(current_power)
+                print(f"Power set to: {current_power}")
             else:
                 pid_output = self.pid_controller.calculate(current_field_level)
                 self.signal_generator.setPower(pid_output + current_power)
