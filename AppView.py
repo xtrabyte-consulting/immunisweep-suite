@@ -98,6 +98,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_probe.temperatureReceived.connect(self.on_fieldProbe_temperatureReceived)
         self.field_probe.serialConnectionError.connect(self.on_fieldProbe_serialConnectionError)
         self.field_probe.fieldProbeError.connect(self.on_fieldProbe_fieldProbeError)
+        self.field_probe.fieldIntensityReceived.connect(self.on_fieldProbe_fieldIntensityReceived)
         
         # Signal Generator Signal -> Slot Connections
         self.signal_generator = AgilentN5181A()
@@ -466,7 +467,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_fieldProbeName.setText('ETS Lindgren ' + model + ' Serial: ' + serial)
 
     @pyqtSlot(float, float, float, float)
-    def on_fieldController_fieldUpdated(self, composite: float, x: float, y: float, z: float):
+    def on_fieldProbe_fieldIntensityReceived(self, x: float, y: float, z: float, composite: float):
         self.measured_field_strength = composite
         self.updateFieldStrengthUI(composite, x, y, z)
             
@@ -482,10 +483,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lcdNumber_xMag.display(x)
         self.lcdNumber_yMag.display(y)
         self.lcdNumber_zMag.display(z)
+    
+    def on_fieldController_fieldUpdated(self, composite: float, x, y, z):
+        self.lcdNumber_avgStrength.display(composite)
+        self.lcdNumber_xMag.display(x)
+        self.lcdNumber_yMag.display(y)
+        self.lcdNumber_zMag.display(z)
         self.measured_field_strength = composite
         self.x_field = x
         self.y_field = y
         self.z_field = z
+        self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=composite, x=x, y=y, z=z)
         
     def update_field_data_plot(self):
         self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
@@ -555,6 +563,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print("Frequency Set: " + str(frequency))
         self.output_frequency = frequency
         self.lcdNumber_freqOut.display(round(frequency, 9))
+        self.sweep_plot.update_plot(time.time() - self.sweep_start_time, frequency)
         
     def update_sweep_plot(self):
         t = time.time() - self.sweep_start_time

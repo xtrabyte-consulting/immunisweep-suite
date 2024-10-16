@@ -148,7 +148,7 @@ class ETSLindgrenHI6006(QObject):
         self.battery_fail = False
         self.command_queue = queue.Queue()
         self.info_interval = 2.0
-        self.data_interval = 0.001
+        self.data_interval = 0.01
         self.composite_field = 0.0
         self.x_component = 0.0
         self.y_component = 0.0
@@ -175,6 +175,7 @@ class ETSLindgrenHI6006(QObject):
             self.probe_thread = threading.Thread(target=self.readWriteProbe)
             self.probe_thread.start()
             self.initializeProbe()
+            print('Probe Thread Started')
         except ValueError as e:
             self.is_running = False
             self.serialConnectionError.emit(str(e))
@@ -216,21 +217,7 @@ class ETSLindgrenHI6006(QObject):
         self.command_queue.put(CompositeDataCommand())
         
     def readCurrentField(self):
-        self.reading_field = True
-        read_data_command = CompositeDataCommand()
-        try:
-            print("Reading Field Strength Data")
-            self.serial.write(read_data_command.command)
-            response = self.serial.read(read_data_command.blocksize)
-            x, y, z, composite = read_data_command.parse(response)
-            print(f'X: {x}, Y: {y}, Z: {z}, Composite: {composite}')
-            self.reading_field = False
-            return composite, x, y, z
-        except:
-            self.serialConnectionError.emit('Error Reading Field Strength Data')
-            self.reading_field = False
-            return 0.0, 0.0, 0.0, 0.0
-        
+        return self.composite_field, self.x_component, self.y_component, self.z_component
     
     def readWriteProbe(self):
         last_info_update = time.time()
@@ -266,18 +253,25 @@ class ETSLindgrenHI6006(QObject):
                         try:
                             # Keep reading field for UI Updates
                             x, y, z, composite = serial_command.parse(message)
+                            print(f'Read Field Level: {composite}')
+                            self.x_component = x
+                            self.y_component = y
+                            self.z_component = z
+                            self.composite_field = composite
                             self.fieldIntensityReceived.emit(composite, x, y, z)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Field Intensity: {message}')
                     elif type(serial_command) == BatteryCommand:
                         try:
                             percentage = serial_command.parse(message)
+                            print(f'Read Battery Level: {percentage}')
                             self.batteryReceived.emit(percentage)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Battery Level: {message}')
                     elif type(serial_command) == TemperatureCommand:
                         try:
                             temperature = serial_command.parse(message)
+                            print(f'Read Battery Level: {temperature}')
                             self.temperatureReceived.emit(temperature)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Temperature: {message}')

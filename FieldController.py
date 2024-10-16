@@ -134,7 +134,7 @@ class FieldController(QObject):
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
                 print(f"Field level within threshold: {current_field_level}")
-                current_field_level, x, y, z = self.field_probe.getFieldStrength()
+                current_field_level, x, y, z = self.field_probe.readCurrentField()
                 self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
