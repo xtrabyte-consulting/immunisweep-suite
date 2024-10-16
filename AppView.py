@@ -143,6 +143,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.antenna_gain = 10.0
         self.amplifier_gain = 40.0
         self.distance = 0.1
+        self.start_freq = 100.0
+        self.stop_freq = 1000.0
+        self.dwell_time = 0.5
+        self.sweep_term = 0.01
         self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
@@ -208,9 +212,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_timer = QTimer(self)
         self.field_timer.timeout.connect(self.update_field_data_plot)
 
-        self.doubleSpinBox_sweepTerm.setValue(0.01)
-        self.spinBox_startFreq.setValue(100.0)
-        self.spinBox_stopFreq.setValue(1000.0)
+        self.doubleSpinBox_sweepTerm.setValue(self.sweep_term)
+        self.spinBox_startFreq.setValue(self.start_freq)
+        self.spinBox_stopFreq.setValue(self.stop_freq)
         self.comboBox_amplifier.setCurrentIndex(0)
         self.comboBox_antenna.setCurrentIndex(0)
         self.label_validSettings.setText('Please Select Antenna and Amplifier')
@@ -308,6 +312,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 
     def on_spinBox_targetStrength_valueChanged(self, target):
         print(f"Spin box value changed: {target}")
+        self.target_field_strength = float(target)
         self.field_controller.setTargetField(float(target))
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
@@ -364,6 +369,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if valid:
             self.field_controller.setStartFrequency(float(freq))
             self.field_controller.setStopFrequency(self.spinBox_stopFreq.value())
+            self.start_freq = float(freq)
+            self.stop_freq = self.spinBox_stopFreq.value()
             self.reset_sweep_plot_view()
             
     def on_spinBox_stopFreq_valueChanged(self, freq: float):
@@ -371,9 +378,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if valid:
             self.field_controller.setStopFrequency(float(freq))
             self.field_controller.setStartFrequency(self.spinBox_startFreq.value())
+            self.stop_freq = float(freq)
+            self.start_freq = self.spinBox_stopFreq.value()
             self.reset_sweep_plot_view()
 
     def on_spinBox_dwell_valueChanged(self, time: float):
+        self.dwell_time = float(time)
         self.field_controller.setDwellTime(float(time), self.comboBox_dwellUnit.currentText())
         self.reset_sweep_plot_view()
             
@@ -385,11 +395,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_spinBox_sweepTerm_valueChanged(self, term: float):
         print("Sweep Term: " + str(term))
+        self.sweep_term = float(term)
         self.field_controller.setSweepTerm(float(term))
         self.reset_sweep_plot_view()
     
     def reset_sweep_plot_view(self):
-        self.sweep_plot.init_plot(0.0, self.field_controller.getSweepTime(), self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency())
+        self.sweep_plot.init_plot(0.0, self.field_controller.getSweepTime() * 10, self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency())
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
@@ -399,6 +410,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #self.signal_generator.setPower(self.calculatePowerOut())
         print("Theoretical Power Out: " + str(self.calculatePowerOut()))
         self.sweep_timer.start(100)  # Update every 100 ms
+        self.field_timer.start(10)  # Update every 10 ms
         self.toggleSweepUI(enabled=False)
         self.field_controller.start_sweep()
         
@@ -493,7 +505,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.x_field = x
         self.y_field = y
         self.z_field = z
-        self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=composite, x=x, y=y, z=z)
         
     def update_field_data_plot(self):
         self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
@@ -563,12 +574,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print("Frequency Set: " + str(frequency))
         self.output_frequency = frequency
         self.lcdNumber_freqOut.display(round(frequency, 9))
-        self.sweep_plot.update_plot(time.time() - self.sweep_start_time, frequency)
+        #self.sweep_plot.update_plot(time.time() - self.sweep_start_time, frequency)
         
     def update_sweep_plot(self):
         t = time.time() - self.sweep_start_time
         print("Elapsed Time: " + str(t) + " Current Frequency: " + str(self.output_frequency))
-        self.sweep_plot.update_plot(time.time() - self.sweep_start_time, self.output_frequency)
+        self.sweep_plot.update_plot(t, self.output_frequency)
     
     def on_fieldController_powerUpdated(self, power: float):
         self.output_power = power
