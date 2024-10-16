@@ -26,8 +26,8 @@ class FieldController(QObject):
             self.use_stepper = True
         self.is_sweeping = False
         self.target_field = 1.0
-        self.threshold = 1.25
-        self.base_power = -20
+        self.threshold = 1.5
+        self.base_power = -10
         self.start_freq = 100.0
         self.stop_freq = 1000.0
         self.dwell_time = 0.5
@@ -115,8 +115,9 @@ class FieldController(QObject):
         """Adjust the power level based on probe readings to return to target field level."""
         while True:
             # Get the current field level from the field probe
-            sleep(0.05)
-            current_field_level, x, y, z = self.field_probe.getFieldStrength()
+            sleep(0.01)
+            # Call a direct blocking method to get the true field strength right now
+            current_field_level, x, y, z = self.field_probe.readCurrentField()
             
             print(f"Current Field Level: {current_field_level} V/m")
             # Emit signal to update the UI with the field level

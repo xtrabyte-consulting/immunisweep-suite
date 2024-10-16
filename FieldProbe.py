@@ -154,6 +154,7 @@ class ETSLindgrenHI6006(QObject):
         self.y_component = 0.0
         self.z_component = 0.0
         self.stop_probe_event = threading.Event()
+        self.reading_field = False
     
     def commandToSignal(self, command: SerialCommand) -> pyqtSignal:
         if type(command) == IdentityCommand:
@@ -211,11 +212,25 @@ class ETSLindgrenHI6006(QObject):
     def getTemperature(self):
         self.command_queue.put(TemperatureCommand())
     
-    def readFieldStrengthMeasurement(self):
+    def getFieldStrengthMeasurement(self):
         self.command_queue.put(CompositeDataCommand())
         
-    def getFieldStrength(self):
-        return self.composite_field, self.x_component, self.y_component, self.z_component
+    def readCurrentField(self):
+        self.reading_field = True
+        read_data_command = CompositeDataCommand()
+        try:
+            print("Reading Field Strength Data")
+            self.serial.write(read_data_command.command)
+            response = self.serial.read(read_data_command.blocksize)
+            x, y, z, composite = read_data_command.parse(response)
+            print(f'X: {x}, Y: {y}, Z: {z}, Composite: {composite}')
+            self.reading_field = False
+            return composite, x, y, z
+        except:
+            self.serialConnectionError.emit('Error Reading Field Strength Data')
+            self.reading_field = False
+            return 0.0, 0.0, 0.0, 0.0
+        
     
     def readWriteProbe(self):
         last_info_update = time.time()
@@ -223,13 +238,13 @@ class ETSLindgrenHI6006(QObject):
         alerted = 0
         while not self.stop_probe_event.is_set() and self.is_running:
             if time.time() - last_data_update >= self.data_interval:
-                self.readFieldStrengthMeasurement()
+                self.getFieldStrengthMeasurement()
                 last_data_update = time.time()
             if time.time() - last_info_update >= self.info_interval:
                 self.getBatteryPercentage()
                 self.getTemperature()
                 last_info_update = time.time()
-            if not self.command_queue.empty():
+            if not self.command_queue.empty() and not self.reading_field:
                 serial_command: SerialCommand = self.command_queue.get()
                 try:
                     self.serial.write(serial_command.command)
@@ -249,12 +264,9 @@ class ETSLindgrenHI6006(QObject):
                             self.fieldProbeError.emit(f'Error Reading Probe Identity: {message}')
                     elif type(serial_command) == CompositeDataCommand:
                         try:
+                            # Keep reading field for UI Updates
                             x, y, z, composite = serial_command.parse(message)
-                            self.composite_field = composite
-                            self.x_component = x
-                            self.y_component = y
-                            self.z_component = z
-                            #self.fieldIntensityReceived.emit(x, y, z, composite)
+                            self.fieldIntensityReceived.emit(composite, x, y, z)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Field Intensity: {message}')
                     elif type(serial_command) == BatteryCommand:
