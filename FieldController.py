@@ -158,4 +158,5 @@ class FieldController(QObject):
         """Stop the frequency sweep."""
         self.is_sweeping = False
         self.signal_generator.setRFOut(False)
-        self.pid_controller.clear()
+        if not self.use_stepper:
+            self.pid_controller.clear()

@@ -403,7 +403,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_pushButton_pauseSweep_pressed(self):
         self.field_controller.stop_sweep()
-        self.complete_sweep()
     
     def complete_sweep(self):    
         self.sweep_timer.stop()
