@@ -117,8 +117,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_controller_thread = QThread()
         self.field_controller.moveToThread(self.field_controller_thread)
         
-        #Start the thread
-        self.field_controller_thread.start()
+        #self.field_controller.move_timers_to_thread(self.field_controller_thread)
+        
+        self.dwell_timer = QTimer(self)
+        self.dwell_timer.timeout.connect(self.on_dwell_complete)
         
         # Connect Field Controller Signals to UI Slots
         self.field_controller.frequencyUpdated.connect(self.on_fieldController_frequencySet)
@@ -127,6 +129,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_controller.sweepCompleted.connect(self.on_fieldController_sweepCompleted)
         self.field_controller.sweepStatus.connect(self.on_fieldController_sweepStatus)
         self.field_controller.highFieldDetected.connect(self.on_fieldController_highFieldDetected)
+        self.field_controller.startDwell.connect(self.start_dwell_timer)
+        #Start the thread
+        self.field_controller_thread.start()
         
         # Initialize State
         self.sweep_in_progress = False
@@ -138,13 +143,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.x_field = 0.0
         self.y_field = 0.0
         self.z_field = 0.0
-        self.output_power = -10.0
+        self.output_power = -15.0
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
         self.amplifier_gain = 40.0
         self.distance = 0.1
-        self.start_freq = 100.0
-        self.stop_freq = 1000.0
+        self.start_freq = 1000.0
+        self.stop_freq = 2000.0
         self.dwell_time = 0.5
         self.sweep_term = 0.01
         self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
@@ -246,7 +251,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_pushButton_detectFieldProbe_pressed(self):
         self.field_probe.start()
+    
+    def start_dwell_timer(self, time: int):
+        print(f"Starting Dwell Timer for {time} ms")
+        self.dwell_timer.start(time)
         
+    def on_dwell_complete(self):
+        print("Dwell Complete, stepping sweep...")
+        self.dwell_timer.stop()
+        self.field_controller.step_sweep()    
         
     def on_comboBox_amplifier_activated(self, amplifier: str):
         print(f"Amplifier Selected: {amplifier}")
@@ -400,7 +413,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.reset_sweep_plot_view()
     
     def reset_sweep_plot_view(self):
-        self.sweep_plot.init_plot(0.0, self.field_controller.getSweepTime() * 10, self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency())
+        self.sweep_plot.init_plot(0.0, self.field_controller.getSweepTime(), self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency())
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
@@ -410,7 +423,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #self.signal_generator.setPower(self.calculatePowerOut())
         print("Theoretical Power Out: " + str(self.calculatePowerOut()))
         self.sweep_timer.start(100)  # Update every 100 ms
-        self.field_timer.start(10)  # Update every 10 ms
+        self.field_timer.start(100)  # Update every 10 ms
         self.toggleSweepUI(enabled=False)
         self.field_controller.start_sweep()
         
@@ -565,10 +578,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Initialize sig gen to match UI
         self.signal_generator.setRFOut(False)
         self.signal_generator.setModulationState(False)
-        self.signal_generator.setStartFrequency(100.0)
-        self.signal_generator.setStopFrequency(1000.0)
-        self.signal_generator.setFrequency(100.0, Frequency.MHz.value)
-        self.signal_generator.setPower(-10.0)
+        self.signal_generator.setStartFrequency(1000.0)
+        self.signal_generator.setStopFrequency(2000.0)
+        self.signal_generator.setFrequency(1000.0, Frequency.MHz.value)
+        self.signal_generator.setPower(-15.0)
         
     def on_fieldController_frequencySet(self, frequency: float):
         print("Frequency Set: " + str(frequency))
@@ -578,7 +591,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def update_sweep_plot(self):
         t = time.time() - self.sweep_start_time
-        print("Elapsed Time: " + str(t) + " Current Frequency: " + str(self.output_frequency))
+        #print("Elapsed Time: " + str(t) + " Current Frequency: " + str(self.output_frequency))
         self.sweep_plot.update_plot(t, self.output_frequency)
     
     def on_fieldController_powerUpdated(self, power: float):

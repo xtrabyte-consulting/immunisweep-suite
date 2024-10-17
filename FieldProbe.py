@@ -199,8 +199,9 @@ class ETSLindgrenHI6006(QObject):
     def stop(self):
         self.is_running = False
         self.stop_probe_event.set()
-        if self.probe_thread.is_alive() and self.probe_thread is not None:
-            self.probe_thread.join()
+        if self.probe_thread is not None:
+            if self.probe_thread.is_alive():
+                self.probe_thread.join()
         if self.serial and self.serial.is_open:
             self.serial.close()
         
@@ -253,7 +254,7 @@ class ETSLindgrenHI6006(QObject):
                         try:
                             # Keep reading field for UI Updates
                             x, y, z, composite = serial_command.parse(message)
-                            print(f'Read Field Level: {composite}')
+                            #print(f'Read Field Level: {composite}')
                             self.x_component = x
                             self.y_component = y
                             self.z_component = z
@@ -264,14 +265,14 @@ class ETSLindgrenHI6006(QObject):
                     elif type(serial_command) == BatteryCommand:
                         try:
                             percentage = serial_command.parse(message)
-                            print(f'Read Battery Level: {percentage}')
+                            #print(f'Read Battery Level: {percentage}')
                             self.batteryReceived.emit(percentage)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Battery Level: {message}')
                     elif type(serial_command) == TemperatureCommand:
                         try:
                             temperature = serial_command.parse(message)
-                            print(f'Read Battery Level: {temperature}')
+                            #print(f'Read Battery Level: {temperature}')
                             self.temperatureReceived.emit(temperature)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Temperature: {message}')

@@ -660,7 +660,7 @@ class AgilentN5181A(QObject):
                 if commandType == SCPI.Identity: 
                     self.instrumentConnected.emit(state)
                 elif commandType == SCPI.RFOut:
-                    self.rfOutSet.emit(bool(int(state)))
+                    self.rfOutSet.emit(bool(int(float(state))))
                 elif commandType == SCPI.Power:
                     print(f'Power: {state}')
                     #self.powerSet.emit(float(state))

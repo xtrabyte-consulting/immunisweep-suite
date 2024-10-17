@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QTimer, QThread, pyqtSignal, pyqtSlot
 from FieldProbe import ETSLindgrenHI6006
 from SignalGenerator import AgilentN5181A, Frequency, Time
 from PID import PIDController as PID
@@ -15,6 +15,7 @@ class FieldController(QObject):
     sweepCompleted = pyqtSignal()
     sweepStatus = pyqtSignal(float)
     highFieldDetected = pyqtSignal()
+    startDwell = pyqtSignal(int)
     
     def __init__(self, signal_generator: AgilentN5181A, field_probe: ETSLindgrenHI6006, pid_controller: PID | None):
         super().__init__()
@@ -24,11 +25,8 @@ class FieldController(QObject):
         if pid_controller is None:
             self.pid_controller = PID(0.1, 0.01, 0.01)
             self.use_stepper = True
-            
-        # Timers for sweep dwell and power adjustments
-        self.sweep_timer = QTimer(self)
-        self.adjust_timer = QTimer(self)
-        self.sweep_timer.timeout.connect(self.step_sweep)
+        
+        self.adjust_timer = QTimer()
         self.adjust_timer.timeout.connect(self.adjust_power_step)
             
         # Initialize the field controller parameters
@@ -36,13 +34,18 @@ class FieldController(QObject):
         self.target_field = 1.0
         self.threshold = 1.5
         self.base_power = -10
-        self.start_freq = 100.0
-        self.current_freq = 100.0
-        self.stop_freq = 1000.0
+        self.current_power = -10
+        self.start_freq = 1000.0
+        self.current_freq = 1000.0
+        self.stop_freq = 2000.0
         self.dwell_time_ms = 500
         self.sweep_term = 0.01
+        
+        
+    def move_timers_to_thread(self, thread: QThread):
+        '''Move the timers to this controller thread.'''
+        self.adjust_timer.moveToThread(thread)
             
-
     def start_sweep(self):
         """Start the frequency sweep with the specified range, dwell and step term."""
         self.is_sweeping = True
@@ -55,11 +58,16 @@ class FieldController(QObject):
 
     def step_sweep(self):
         """Step through the frequency sweep range."""
-        self.sweep_timer.stop()
+        #self.sweep_timer.stop()
         
         # Check if the sweep is still active
         if self.current_freq <= self.stop_freq and self.is_sweeping:
             
+            current_field_level, x, y, z = self.field_probe.readCurrentField()
+        
+            print(f"Current Field Level: {current_field_level} V/m")
+            # Emit signal to update the UI with the field level to make prettier lines
+            self.fieldUpdated.emit(current_field_level, x, y, z)
             # Reset signal generator to low power
             self.signal_generator.setPower(self.base_power)
             sleep(0.005) # Wait for power to stabilize
@@ -73,7 +81,15 @@ class FieldController(QObject):
 
             print(f"Adjusting power to target level at {self.current_freq} MHz")
             # Perform closed-loop control to adjust the power
-            self.start_adjustment()
+            self.adjust_power_to_target_level()
+            
+            print(f"Sleeping for {self.dwell_time_ms} milliseconds")
+            self.startDwell.emit(self.dwell_time_ms)
+            
+            print("Power adjusted. Moving to next frequency step.")
+
+            # Move to the next frequency step
+            self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
 
         else:
             # Sweep is complete
@@ -95,7 +111,7 @@ class FieldController(QObject):
         
         print(f"Current Field Level: {current_field_level} V/m")
         # Emit signal to update the UI with the field level
-        self.fieldUpdated.emit(current_field_level, x, y, z)
+        #self.fieldUpdated.emit(current_field_level, x, y, z)
         
         # Check if the field level is too high. If so, stop the sweep
         # shut off the RF output and emit a signal to notify the user
@@ -112,35 +128,35 @@ class FieldController(QObject):
             current_field_level, x, y, z = self.field_probe.readCurrentField()
             self.fieldUpdated.emit(current_field_level, x, y, z)
             self.adjust_timer.stop()
-            self.sweep_timer.start(self.dwell_time_ms)
+            self.startDwell.emit(self.dwell_time_ms)
             print("Power adjusted. Moving to next frequency step.")
             self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
             return
         
-        current_power = self.signal_generator.getPower()
+        self.current_power = self.signal_generator.getPower()
         
         if self.use_stepper:
             print("Using stepper control")
             # Adjust the power level based on the current field level
             if current_field_level < self.target_field:
-                current_power += 0.1
+                self.current_power += 0.1
             elif current_field_level > (self.target_field * self.threshold):
-                current_power -= 1
+                self.current_power -= 1
             #print(f"Setting power to: {current_power}")
             # Move to the next frequency step
-            current_power = self.signal_generator.setPower(current_power)
-            print(f"Power set to: {current_power}")
+            self.current_power = self.signal_generator.setPower(self.current_power)
+            print(f"Power set to: {self.current_power}")
         else:
             print("Using PID control")
             pid_output = self.pid_controller.calculate(current_field_level)
-            self.signal_generator.setPower(pid_output + current_power)
-        self.powerUpdated.emit(current_power)
+            self.signal_generator.setPower(pid_output + self.current_power)
+        self.powerUpdated.emit(self.current_power)
             
     def stop_sweep(self):
         """Stop the frequency sweep and all timers."""
         self.is_sweeping = False
-        self.adjust_timer.stop()
-        self.sweep_timer.stop()
+        #self.adjust_timer.stop()
+        #self.sweep_timer.stop()
         self.signal_generator.setRFOut(False)
         self.signal_generator.setPower(self.base_power)
         if not self.use_stepper:
@@ -155,6 +171,7 @@ class FieldController(QObject):
         return self.target_field
             
     def setStartFrequency(self, start_freq: float):
+        print(f"Setting start frequency to: {start_freq}")
         self.start_freq = start_freq
         
     def getStartFrequency(self) -> float:
@@ -171,7 +188,7 @@ class FieldController(QObject):
             dwell_time *= 0.001
         elif unit == Time.Second.value:
             dwell_time *= 1000
-        self.dwell_time = dwell_time
+        self.dwell_time_ms = dwell_time
         
     def setSweepTerm(self, sweep_term: float):
         self.sweep_term = sweep_term
@@ -186,7 +203,7 @@ class FieldController(QObject):
         return step_count
     
     def getSweepTime(self) -> float:
-        return self.dwell_time * self.getStepCount()
+        return (self.dwell_time_ms / 1000) * self.getStepCount() * 2
     
     
     '''
@@ -215,9 +232,9 @@ class FieldController(QObject):
 
         # Emit the sweep completed signal
         self.sweepCompleted.emit()
+        '''
         
-        
-            def adjust_power_to_target_level(self):
+    def adjust_power_to_target_level(self):
         """Adjust the power level based on probe readings to return to target field level."""
         while True:
             # Get the current field level from the field probe
@@ -244,19 +261,19 @@ class FieldController(QObject):
                 self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
-            current_power = self.signal_generator.getPower()
+            self.current_power = self.signal_generator.getPower()
             
             if self.use_stepper:
                 print("Using stepper control")
                 # Adjust the power level based on the current field level
                 if current_field_level < self.target_field:
-                    current_power += 0.1
+                    self.current_power += 0.1
                 elif current_field_level > (self.target_field * self.threshold):
-                    current_power -= 1
-                print(f"Setting power to: {current_power}")
-                current_power = self.signal_generator.setPower(current_power)
-                print(f"Power set to: {current_power}")
+                    self.current_power -= 1
+                print(f"Setting power to: {self.current_power}")
+                self.current_power = self.signal_generator.setPower(self.current_power)
+                print(f"Power set to: {self.current_power}")
             else:
                 pid_output = self.pid_controller.calculate(current_field_level)
-                self.signal_generator.setPower(pid_output + current_power)
-            self.powerUpdated.emit(current_power)'''
+                self.signal_generator.setPower(pid_output + self.current_power)
+            self.powerUpdated.emit(self.current_power)
