@@ -148,7 +148,7 @@ class ETSLindgrenHI6006(QObject):
         self.battery_fail = False
         self.command_queue = queue.Queue()
         self.info_interval = 2.0
-        self.data_interval = 0.01
+        self.data_interval = 0.005
         self.composite_field = 0.0
         self.x_component = 0.0
         self.y_component = 0.0
@@ -259,7 +259,7 @@ class ETSLindgrenHI6006(QObject):
                             self.y_component = y
                             self.z_component = z
                             self.composite_field = composite
-                            self.fieldIntensityReceived.emit(composite, x, y, z)
+                            #self.fieldIntensityReceived.emit(composite, x, y, z)
                         except:
                             self.fieldProbeError.emit(f'Error Reading Field Intensity: {message}')
                     elif type(serial_command) == BatteryCommand:
