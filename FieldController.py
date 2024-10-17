@@ -40,6 +40,10 @@ class FieldController(QObject):
         self.stop_freq = 2000.0
         self.dwell_time_ms = 500
         self.sweep_term = 0.01
+        self.current_field_level = 0.0
+        self.current_x = 0.0
+        self.current_y = 0.0
+        self.current_z = 0.0
         
         
     def move_timers_to_thread(self, thread: QThread):
@@ -67,7 +71,7 @@ class FieldController(QObject):
         
             print(f"Current Field Level: {current_field_level} V/m")
             # Emit signal to update the UI with the field level to make prettier lines
-            self.fieldUpdated.emit(current_field_level, x, y, z)
+            
             # Reset signal generator to low power
             self.signal_generator.setPower(self.base_power)
             sleep(0.005) # Wait for power to stabilize
@@ -77,11 +81,14 @@ class FieldController(QObject):
             self.sweepStatus.emit(self.log_percentage(self.current_freq, self.start_freq, self.stop_freq))
 
             # Emit the signal to update the UI with the new frequency
-            self.frequencyUpdated.emit(self.current_freq)
+            
 
             print(f"Adjusting power to target level at {self.current_freq} MHz")
             # Perform closed-loop control to adjust the power
             self.adjust_power_to_target_level()
+            
+            self.frequencyUpdated.emit(self.current_freq)
+            self.fieldUpdated.emit(self.current_field_level, self.current_x, self.current_y, self.current_z)
             
             print(f"Sleeping for {self.dwell_time_ms} milliseconds")
             self.startDwell.emit(self.dwell_time_ms)
@@ -125,7 +132,8 @@ class FieldController(QObject):
         
         if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
             print(f"Field level within threshold: {current_field_level}")
-            current_field_level, x, y, z = self.field_probe.readCurrentField()
+            #current_field_level, x, y, z = self.field_probe.readCurrentField()
+            
             self.fieldUpdated.emit(current_field_level, x, y, z)
             self.adjust_timer.stop()
             self.startDwell.emit(self.dwell_time_ms)
@@ -203,7 +211,7 @@ class FieldController(QObject):
         return step_count
     
     def getSweepTime(self) -> float:
-        return (self.dwell_time_ms / 1000) * self.getStepCount() * 2
+        return (self.dwell_time_ms / 1000) * self.getStepCount() * 2.5
     
     
     '''
@@ -238,7 +246,7 @@ class FieldController(QObject):
         """Adjust the power level based on probe readings to return to target field level."""
         while True:
             # Get the current field level from the field probe
-            sleep(0.01)
+            sleep(0.005)
             # Call a direct blocking method to get the true field strength right now
             current_field_level, x, y, z = self.field_probe.readCurrentField()
             
@@ -257,7 +265,11 @@ class FieldController(QObject):
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
                 print(f"Field level within threshold: {current_field_level}")
-                current_field_level, x, y, z = self.field_probe.readCurrentField()
+                #current_field_level, x, y, z = self.field_probe.readCurrentField()
+                self.current_field_level = current_field_level
+                self.current_x = x
+                self.current_y = y
+                self.current_z = z
                 self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
