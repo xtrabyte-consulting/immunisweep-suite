@@ -153,6 +153,7 @@ class ETSLindgrenHI6006(QObject):
         self.x_component = 0.0
         self.y_component = 0.0
         self.z_component = 0.0
+        self.probe_thread = None
         self.stop_probe_event = threading.Event()
         self.reading_field = False
     
