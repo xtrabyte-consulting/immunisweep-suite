@@ -178,7 +178,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_dwell.valueChanged.connect(self.on_spinBox_dwell_valueChanged)
         self.spinBox_dwell.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.comboBox_dwellUnit.activated.connect(self.on_comboBox_dwellUnit_activated)
-        self.comboBox_dwellUnit.setStyleSheet('QComboBox { color: white; }')
+        self.comboBox_dwellUnit.setStyleSheet('''
+            QComboBox QAbstractItemView {
+                color: #f0f0f0; /* Set the font color of the dropdown items */
+            }
+            QComboBox { 
+                color: white; 
+            }
+        ''')
         self.doubleSpinBox_sweepTerm.valueChanged.connect(self.on_spinBox_sweepTerm_valueChanged)
         self.doubleSpinBox_sweepTerm.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_startSweep.pressed.connect(self.on_pushButton_startSweep_pressed)
@@ -194,9 +201,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         # Amplifier and Antenna Selections
         self.comboBox_amplifier.currentIndexChanged[str].connect(self.on_comboBox_amplifier_activated)
-        self.comboBox_amplifier.setStyleSheet('QComboBox { color: white; }')
+        self.comboBox_amplifier.setStyleSheet('''
+            QComboBox QAbstractItemView {
+                color: #f0f0f0; /* Set the font color of the dropdown items */
+            }
+            QComboBox { 
+                color: white; 
+            }
+        ''')
         self.comboBox_antenna.currentIndexChanged[str].connect(self.on_comboBox_antenna_activated)
-        self.comboBox_antenna.setStyleSheet('QComboBox { color: white; }')
+        self.comboBox_antenna.setStyleSheet('''
+            QComboBox QAbstractItemView {
+                color: #f0f0f0; /* Set the font color of the dropdown items */
+            }
+            QComboBox { 
+                color: white; 
+            }
+        ''')
         
         # Closed-Loop Power Control
         self.pid_controller = PIDController(0.6, 0.0, 0.3) # Good @ 4 V/m with horn
