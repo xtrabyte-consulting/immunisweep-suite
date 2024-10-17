@@ -211,7 +211,7 @@ class FieldController(QObject):
         return step_count
     
     def getSweepTime(self) -> float:
-        return (self.dwell_time_ms / 1000) * self.getStepCount() * 2.5
+        return (self.dwell_time_ms / 1000) * self.getStepCount() * 1.1 # Assume 10% overhead for settling time
     
     
     '''

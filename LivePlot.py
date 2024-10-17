@@ -35,10 +35,12 @@ class FrequencyPlot(FigureCanvas):
         self.draw_idle()
         return self.line,
 
-    def update_plot(self, x: float, y: float):
+    def update_plot(self, time: float, freq: float):
         #print("Updating plot: x = {}, y = {}".format(x, y))
-        self.x_data.append(x)
-        self.y_data.append(y)
+        self.x_data.append(time)
+        self.y_data.append(freq)
+        if (time > self.ax.get_xlim()[1]):
+            self.ax.set_xlim(self.x_data[0], self.x_data[-1] + 0.1)
         self.line.set_data(self.x_data, self.y_data)
         self.ax.relim()
         self.ax.autoscale_view()
