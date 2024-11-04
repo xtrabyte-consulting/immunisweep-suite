@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtCore
 """
 This module provides a PyQt5-based GUI application for controlling field intensity using signal generators and field probes.
 It includes classes for managing equipment limits, PID gains, and the main application window.
@@ -14,8 +14,8 @@ from PyQt5.QtCore import *
 from qt_material import apply_stylesheet
 
 from MainWindow import Ui_MainWindow
-from SignalGenerator import AgilentN5181A, Time, Modulation, Frequency, SignalGenerator
-from FieldProbe import ETSLindgrenHI6006, FieldProbe
+from SignalGenerator import AgilentN5181A, Time, Frequency
+from FieldProbe import ETSLindgrenHI6006
 from FieldController import FieldController
 from LivePlot import FrequencyPlot, PowerPlot
 from PID import PIDController
@@ -143,13 +143,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.x_field = 0.0
         self.y_field = 0.0
         self.z_field = 0.0
-        self.output_power = -15.0
+        self.output_power = -30.0
         self.output_frequency = 100.0
         self.antenna_gain = 10.0
         self.amplifier_gain = 40.0
         self.distance = 0.1
-        self.start_freq = 1000.0
-        self.stop_freq = 2000.0
+        self.start_freq = 300.0
+        self.stop_freq = 1000.0
         self.dwell_time = 0.5
         self.sweep_term = 0.01
         self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
@@ -599,10 +599,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Initialize sig gen to match UI
         self.signal_generator.setRFOut(False)
         self.signal_generator.setModulationState(False)
-        self.signal_generator.setStartFrequency(1000.0)
-        self.signal_generator.setStopFrequency(2000.0)
-        self.signal_generator.setFrequency(1000.0, Frequency.MHz.value)
-        self.signal_generator.setPower(-15.0)
+        self.signal_generator.setStartFrequency(300.0)
+        self.signal_generator.setStopFrequency(1000.0)
+        self.signal_generator.setFrequency(300.0, Frequency.MHz.value)
+        self.signal_generator.setPower(-30.0)
         
     def on_fieldController_frequencySet(self, frequency: float):
         print("Frequency Set: " + str(frequency))

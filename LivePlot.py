@@ -1,10 +1,5 @@
-import sys
-import random
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 
 class FrequencyPlot(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):

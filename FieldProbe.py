@@ -1,6 +1,6 @@
 import time
 import serial
-from serial import SerialException, SerialTimeoutException, serialutil
+from serial import SerialException, serialutil
 import threading
 import queue
 import random

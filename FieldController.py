@@ -4,7 +4,6 @@ from SignalGenerator import AgilentN5181A, Frequency, Time
 from PID import PIDController as PID
 from time import sleep
 import math
-from typing import Optional
 
 class FieldController(QObject):
     
@@ -33,8 +32,8 @@ class FieldController(QObject):
         self.is_sweeping = False
         self.target_field = 1.0
         self.threshold = 1.5
-        self.base_power = -10
-        self.current_power = -10
+        self.base_power = -30
+        self.current_power = -30
         self.start_freq = 1000.0
         self.current_freq = 1000.0
         self.stop_freq = 2000.0
