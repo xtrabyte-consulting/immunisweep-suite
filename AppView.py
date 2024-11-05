@@ -89,7 +89,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        self.setWindowTitle('XtraByte Field Controller')
+        self.setWindowTitle('ImmuniSweep Suite')
         
         # Field Probe Signal -> Slot Connections
         self.field_probe = ETSLindgrenHI6006()
