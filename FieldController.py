@@ -27,8 +27,8 @@ class FieldController(QObject):
             self.pid_controller = PID(0.1, 0.01, 0.01)
             self.use_stepper = True
         
-        self.adjust_timer = QTimer()
-        self.adjust_timer.timeout.connect(self.adjust_power_step)
+        #self.adjust_timer = QTimer()
+        #self.adjust_timer.timeout.connect(self.adjust_power_step)
             
         # Initialize the field controller parameters
         self.is_sweeping = False
@@ -74,10 +74,12 @@ class FieldController(QObject):
         '''Log data to a file.'''
         with open(self.log_file_path, "a") as log_file:
             log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - High Field Detected Warning: {warning}\n")
-        
+    
+    '''
     def move_timers_to_thread(self, thread: QThread):
-        '''Move the timers to this controller thread.'''
+        #Move the timers to this controller thread.
         self.adjust_timer.moveToThread(thread)
+    '''    
             
     def start_sweep(self):
         """Start the frequency sweep with the specified range, dwell and step term."""
@@ -138,10 +140,10 @@ class FieldController(QObject):
             self.frequencyUpdated.emit(self.stop_freq)
             self.sweepStatus.emit(100.0)
             
-    def start_adjustment(self):
-        """Start the power adjustment process."""
-        self.adjust_timer.start(10) # Update every 10 ms to align with probe readings
-        
+    #def start_adjustment(self):
+    #    """Start the power adjustment process."""
+    #    self.adjust_timer.start(10) # Update every 10 ms to align with probe readings
+    '''   
     def adjust_power_step(self):
         """Adjust the power level based on probe readings to return to target field level."""
         # Get the current field level from the field probe
@@ -190,9 +192,11 @@ class FieldController(QObject):
             pid_output = self.pid_controller.calculate(current_field_level)
             self.signal_generator.setPower(pid_output + self.current_power)
         self.powerUpdated.emit(self.current_power)
+    '''
             
     def stop_sweep(self):
         """Stop the frequency sweep and all timers."""
+        print("Stopping sweep")
         self.is_sweeping = False
         self.high_field_detected = False
         #self.adjust_timer.stop()

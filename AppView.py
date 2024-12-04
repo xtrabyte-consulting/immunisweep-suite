@@ -446,10 +446,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_pushButton_startSweep_pressed(self):
         if self.sweep_in_progress:
+            print("Push Button Stop Sweep")
             self.sweep_in_progress = False
             self.toggleSweepUI(enabled=True)
             self.field_controller.stop_sweep()
         else:
+            print("Push Button Start Sweep")
             self.sweep_plot.clear_plot()
             self.sweep_start_time = time.time()
             self.sweep_in_progress = True
@@ -682,7 +684,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_modUnit.setText('dBm')
         
     def on_sigGen_error(self, message: str):
-        self.field_controller.stop_sweep()
+        print("Signal Generator Error: " + message)
+        #self.field_controller.stop_sweep()
         self.displaySingleAlert(message)
     
     def closeEvent(self, event):
