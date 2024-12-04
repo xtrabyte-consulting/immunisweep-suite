@@ -261,6 +261,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progressBar_freqSweep.setValue(0)
         self.progressBar_freqSweep.setHidden(True)
         
+        self.pushButton_startSweep.setText('Sweep Off')
+        
         self.startDeviceDetection()
         
     def startDeviceDetection(self):
@@ -445,8 +447,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_pushButton_startSweep_pressed(self):
         if self.sweep_in_progress:
             self.sweep_in_progress = False
-            self.sweep_timer.stop()
-            self.field_timer.stop()
             self.toggleSweepUI(enabled=True)
             self.field_controller.stop_sweep()
         else:
