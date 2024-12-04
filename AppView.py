@@ -665,7 +665,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_modUnit.setText('dBm')
         
     def on_sigGen_error(self, message: str):
-        self.displayAlert(message)
+        self.field_controller.stop_sweep()
+        self.displaySingleAlert(message)
     
     def closeEvent(self, event):
         self.field_probe.stop()
