@@ -396,10 +396,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pushButton_rfOn.setEnabled(True)
             valid = True
         return valid
-                
-    def on_fieldController_highFieldDetected(self):
-        self.displaySingleAlert("High Field Detected. Stopping Sweep and Disabling RF Output.")
-        self.field_controller.stop_sweep()
+    
+    @pyqtSlot(str)            
+    def on_fieldController_highFieldDetected(self, message: str):
+        self.displaySingleAlert(f"High Field Detected. Check log at {message} for details.")
+        #self.field_controller.stop_sweep()
 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
@@ -452,7 +453,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.sweep_plot.clear_plot()
             self.sweep_start_time = time.time()
             self.sweep_in_progress = True
-            print("Theoretical Power Out: " + str(self.calculatePowerOut()))
             self.sweep_timer.start(100)  # Update every 100 ms
             self.field_timer.start(100)  # Update every 10 ms
             self.toggleSweepUI(enabled=False)

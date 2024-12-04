@@ -4,6 +4,8 @@ from SignalGenerator import AgilentN5181A, Frequency, Time
 from PID import PIDController as PID
 from time import sleep
 import math
+import os
+from datetime import datetime
 
 class FieldController(QObject):
     
@@ -13,7 +15,7 @@ class FieldController(QObject):
     fieldUpdated = pyqtSignal(float, float, float, float)
     sweepCompleted = pyqtSignal()
     sweepStatus = pyqtSignal(float)
-    highFieldDetected = pyqtSignal()
+    highFieldDetected = pyqtSignal(str)
     startDwell = pyqtSignal(int)
     
     def __init__(self, signal_generator: AgilentN5181A, field_probe: ETSLindgrenHI6006, pid_controller: PID | None):
@@ -45,6 +47,33 @@ class FieldController(QObject):
         self.current_y = 0.0
         self.current_z = 0.0
         
+        # Ensure the MyApp directory exists and set up logging
+        self.log_file_path = self.setup_logging_directory()
+        
+    def setup_logging_directory(self) -> str:
+        '''Create a directory for logging data and return the path.'''
+        # Get the user's Documents directory
+        documents_dir = os.path.expanduser("~/Documents")
+        log_dir = os.path.join(documents_dir, "ImmuniSweepLogs")
+
+        # Ensure the MyApp directory exists
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # Create a log file path with the current date and time
+        log_file = os.path.join(log_dir, f"log_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt")
+        
+        '''
+        log_dir = os.path.join(os.getcwd(), "MyApp")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        log_file = os.path.join(log_dir, "FieldController.log")
+        '''
+        return log_file
+    
+    def log_warning(self, warning: str):
+        '''Log data to a file.'''
+        with open(self.log_file_path, "a") as log_file:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - High Field Detected Warning: {warning}\n")
         
     def move_timers_to_thread(self, thread: QThread):
         '''Move the timers to this controller thread.'''
@@ -262,11 +291,13 @@ class FieldController(QObject):
             # shut off the RF output and emit a signal to notify the user
             if current_field_level > (self.target_field * 2.0):
                 if not self.high_field_detected:
-                    self.highFieldDetected.emit()
+                    self.highFieldDetected.emit(self.log_file_path)
                     self.high_field_detected = True
-                    self.signal_generator.setPower(self.base_power)
-                    self.signal_generator.setRFOut(False)
-                    self.is_sweeping = False
+                    #self.signal_generator.setPower(self.base_power)
+                    #self.signal_generator.setRFOut(False)
+                    #self.is_sweeping = False
+                warning_message = f'Field level exceeded 2x target level: {current_field_level} V/m \n At frequency: {self.current_freq} MHz \n And power: {self.current_power} dBm'
+                self.log_warning(warning_message)
                 break
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
