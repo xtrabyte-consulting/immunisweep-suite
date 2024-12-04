@@ -566,10 +566,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_temperature.setText(f'{str(temp)} °F')
     
     def on_fieldProbe_fieldProbeError(self, message: str):
-        self.displayAlert("ETS-Lindgren HI-6006:" + message)
+        self.displaySingleAlert("ETS-Lindgren HI-6006:" + message)
         
     def on_fieldProbe_serialConnectionError(self, message: str):
-        self.displayAlert("Probe Connection:" + message)
+        self.displaySingleAlert("Probe Connection:" + message)
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
@@ -599,7 +599,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.signal_generator.retryDetection()
             if not self.alerted:
-                self.displayAlert("Signal Generator Disconnected. Please connect via LAN.")
+                self.displaySingleAlert("Signal Generator Disconnected. Please connect via LAN.")
                 self.alerted = True        
     
     def on_sigGen_instrumentConnected(self, message: str):
