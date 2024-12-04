@@ -708,6 +708,7 @@ class AgilentN5181A(QObject):
                 
     def check_static_ip(self):
         responded = False
+        undetected_alert = False
         while self.ping_started and not responded:
             print('Ping started.')
             try:
@@ -723,7 +724,9 @@ class AgilentN5181A(QObject):
                         print(str(response_time))
                 else:
                     if (self.count == 0):
-                        self.instrumentDetected.emit(False)
+                        if not undetected_alert:
+                            self.instrumentDetected.emit(False)
+                            undetected_alert = True
                     else:
                         self.count -= 1
             except Exception as e:
