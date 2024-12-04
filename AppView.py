@@ -371,11 +371,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_startFreq.setEnabled(enabled)
         self.spinBox_stopFreq.setEnabled(enabled)
         self.spinBox_dwell.setEnabled(enabled)
-        if enabled:
-            self.pushButton_startSweep.setText('Sweep On')
-        else:
-            self.pushButton_startSweep.setText('Sweep Off')
-        self.progressBar_freqSweep.setHidden(enabled)
+        
         
     def applyFrequencyLimits(self, start_freq: float, stop_freq: float) -> bool:
         print(f"Start Frequency: {start_freq}, Stop Frequency: {stop_freq}, Min: {self.equipment_limits.getMinFrequency()}, Max: {self.equipment_limits.getMaxFrequency()}")
@@ -445,19 +441,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
-        if self.sweep_in_progress:
+        if self.field_controller.is_sweeping:
             print("Push Button Stop Sweep")
-            self.sweep_in_progress = False
-            self.toggleSweepUI(enabled=True)
+            #self.sweep_in_progress = False
+            #self.toggleSweepUI(enabled=True)
+            self.pushButton_startSweep.setText('Sweep Off')
+            self.progressBar_freqSweep.setHidden(True)
             self.field_controller.stop_sweep()
         else:
             print("Push Button Start Sweep")
             self.sweep_plot.clear_plot()
             self.sweep_start_time = time.time()
-            self.sweep_in_progress = True
+            #self.sweep_in_progress = True
             self.sweep_timer.start(100)  # Update every 100 ms
             self.field_timer.start(100)  # Update every 10 ms
-            self.toggleSweepUI(enabled=False)
+            self.pushButton_startSweep.setText('Sweep On')
+            self.progressBar_freqSweep.setHidden(False)
+            #self.toggleSweepUI(enabled=False)
             self.field_controller.start_sweep()
     
     '''   
