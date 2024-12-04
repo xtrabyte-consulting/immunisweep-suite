@@ -34,7 +34,7 @@ CURRENT_DIR = os.path.curdir
 try:
     # Include in try/except block if you're also targeting Mac/Linux
     from PyQt5.QtWinExtras import QtWin
-    myappid = 'something.else' #'com.learnpyqt.minute-apps.paint'
+    myappid = 'something.else'
     QtWin.setCurrentProcessExplicitAppUserModelID(myappid)    
 except ImportError:
     pass
@@ -156,6 +156,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
         
+        self.single_alert_window = None
         
         ### UI Input and Control Signal -> Slot Connections
         # Device detection
@@ -394,8 +395,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return valid
                 
     def on_fieldController_highFieldDetected(self):
-        self.displayAlert("High Field Detected. Stopping Sweep and Disabling RF Output.")
-        self.complete_sweep()
+        self.displaySingleAlert("High Field Detected. Stopping Sweep and Disabling RF Output.")
+        self.field_controller.stop_sweep()
 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
@@ -503,6 +504,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.alert = QMessageBox()
         self.alert.setText(text)
         self.alert.exec()
+        
+    def displaySingleAlert(self, text):
+        if self.single_alert_window is not None:
+            return
+        self.single_alert_window = QMessageBox(self)
+        self.single_alert_window.setIcon(QMessageBox.Warning)
+        self.single_alert_window.setText(text)
+        self.single_alert_window.setWindowTitle('Alert')
+        self.single_alert_window.setStandardButtons(QMessageBox.Ok)
+        self.single_alert_window.buttonClicked.connect(self.on_single_alert_button_clicked)
+        self.single_alert_window.show()
+        
+    def on_single_alert_button_clicked(self, button):
+        self.single_alert_window.close()
+        self.single_alert_window = None
     
     @pyqtSlot(str, str, str, str)
     def on_fieldProbe_identityReceived(self, model: str, revision: str, serial: str, calibration: str):
