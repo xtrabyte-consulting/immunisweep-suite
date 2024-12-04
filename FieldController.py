@@ -56,6 +56,7 @@ class FieldController(QObject):
         # Set the signal generator to low power to start
         self.signal_generator.setPower(self.base_power)
         self.signal_generator.setRFOut(True)
+        sleep(1.0) # Wait for power to stabilize
         print(f"Starting sweep from {self.start_freq} to {self.stop_freq} with a step term of {self.sweep_term}")
         self.step_sweep()
 
