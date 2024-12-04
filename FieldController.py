@@ -30,6 +30,7 @@ class FieldController(QObject):
             
         # Initialize the field controller parameters
         self.is_sweeping = False
+        self.high_field_detected = False
         self.target_field = 1.0
         self.threshold = 1.5
         self.base_power = -30
@@ -163,6 +164,7 @@ class FieldController(QObject):
     def stop_sweep(self):
         """Stop the frequency sweep and all timers."""
         self.is_sweeping = False
+        self.high_field_detected = False
         #self.adjust_timer.stop()
         #self.sweep_timer.stop()
         self.signal_generator.setRFOut(False)
@@ -257,10 +259,12 @@ class FieldController(QObject):
             # Check if the field level is too high. If so, stop the sweep
             # shut off the RF output and emit a signal to notify the user
             if current_field_level > (self.target_field * 2.0):
-                self.highFieldDetected.emit()
-                self.signal_generator.setPower(self.base_power)
-                self.signal_generator.setRFOut(False)
-                self.is_sweeping = False
+                if not self.high_field_detected:
+                    self.highFieldDetected.emit()
+                    self.high_field_detected = True
+                    self.signal_generator.setPower(self.base_power)
+                    self.signal_generator.setRFOut(False)
+                    self.is_sweeping = False
                 break
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
