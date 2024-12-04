@@ -168,8 +168,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_targetStrength.valueChanged.connect(self.on_spinBox_targetStrength_valueChanged)
         self.spinBox_targetStrength.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_rfOn.pressed.connect(self.on_pushButton_rfState_pressed)
-        self.pushButton_rfOff.pressed.connect(self.on_pushButton_rfState_pressed)
-        self.pushButton_setGains.pressed.connect(lambda: PIDGainsPopUp(self).exec_())
+        #self.pushButton_rfOff.pressed.connect(self.on_pushButton_rfState_pressed)
+        #self.pushButton_setGains.pressed.connect(lambda: PIDGainsPopUp(self).exec_())
         
         # Output Frequency Control
         self.spinBox_startFreq.valueChanged[float].connect(self.on_spinBox_startFreq_valueChanged)
@@ -190,14 +190,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.doubleSpinBox_sweepTerm.valueChanged.connect(self.on_spinBox_sweepTerm_valueChanged)
         self.doubleSpinBox_sweepTerm.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_startSweep.pressed.connect(self.on_pushButton_startSweep_pressed)
-        self.pushButton_pauseSweep.pressed.connect(self.on_pushButton_pauseSweep_pressed)
+        #self.pushButton_pauseSweep.pressed.connect(self.on_pushButton_pauseSweep_pressed)
         
         # Output Modulation Control
         self.spinBox_modDepth.valueChanged[float].connect(self.spinBox_modDepth_valueChanged)
         self.spinBox_modDepth.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.spinBox_modFreq.valueChanged[float].connect(self.spinBox_modFreq_valueChanged)
         self.spinBox_modFreq.setStyleSheet('QDoubleSpinBox { color: white; }')
-        self.pushButton_modulationOff.pressed.connect(self.pushButton_modulationState_pressed)
+        #self.pushButton_modulationOff.pressed.connect(self.pushButton_modulationState_pressed)
         self.pushButton_modulationOn.pressed.connect(self.pushButton_modulationState_pressed)
         
         # Amplifier and Antenna Selections
@@ -248,7 +248,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_validSettings.setStyleSheet('color: red')
         
         # Other UI Setup
-        self.pushButton_pauseSweep.setEnabled(False)
+        #self.pushButton_pauseSweep.setEnabled(False)
         pixmap = QPixmap('broadcast-off.png')
         scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_rfOutState.setPixmap(scaledPixmap)
@@ -352,11 +352,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_rfState_pressed(self):
-        sender = self.sender()
-        if sender == self.pushButton_rfOff:
+        if self.output_on:
             self.signal_generator.setRFOut(False)
-        elif sender == self.pushButton_rfOn:
+            self.pushButton_rfOn.setText('RF Off')
+        else:
             self.signal_generator.setRFOut(True)
+            self.pushButton_rfOn.setText('RF On')
     
     def on_connectFieldProbeButton_pressed(self):
         self.field_probe.start()
@@ -368,8 +369,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_startFreq.setEnabled(enabled)
         self.spinBox_stopFreq.setEnabled(enabled)
         self.spinBox_dwell.setEnabled(enabled)
-        self.pushButton_startSweep.setEnabled(enabled)
-        self.pushButton_pauseSweep.setEnabled(not enabled)
+        if enabled:
+            self.pushButton_startSweep.setText('Sweep On')
+        else:
+            self.pushButton_startSweep.setText('Sweep Off')
         self.progressBar_freqSweep.setHidden(enabled)
         
     def applyFrequencyLimits(self, start_freq: float, stop_freq: float) -> bool:
@@ -439,18 +442,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
-        self.sweep_plot.clear_plot()
-        self.sweep_start_time = time.time()
-        self.sweep_in_progress = True
-        #self.signal_generator.setPower(self.calculatePowerOut())
-        print("Theoretical Power Out: " + str(self.calculatePowerOut()))
-        self.sweep_timer.start(100)  # Update every 100 ms
-        self.field_timer.start(100)  # Update every 10 ms
-        self.toggleSweepUI(enabled=False)
-        self.field_controller.start_sweep()
-        
+        if self.sweep_in_progress:
+            self.sweep_in_progress = False
+            self.sweep_timer.stop()
+            self.field_timer.stop()
+            self.toggleSweepUI(enabled=True)
+            self.field_controller.stop_sweep()
+        else:
+            self.sweep_plot.clear_plot()
+            self.sweep_start_time = time.time()
+            self.sweep_in_progress = True
+            print("Theoretical Power Out: " + str(self.calculatePowerOut()))
+            self.sweep_timer.start(100)  # Update every 100 ms
+            self.field_timer.start(100)  # Update every 10 ms
+            self.toggleSweepUI(enabled=False)
+            self.field_controller.start_sweep()
+    
+    '''   
     def on_pushButton_pauseSweep_pressed(self):
         self.field_controller.stop_sweep()
+    ''' 
     
     def complete_sweep(self):    
         self.sweep_timer.stop()
@@ -496,9 +507,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signal_generator.setAMFrequency(freq)
         
     def pushButton_modulationState_pressed(self):
-        sender = self.sender()
-        on = sender == self.pushButton_modulationOn
-        self.signal_generator.setModulationState(on)
+        if self.modulation_on:
+            self.pushButton_modulationOn.setText('Modulation Off')
+            self.signal_generator.setModulationState(False)
+        else:
+            self.pushButton_modulationOn.setText('Modulation On')
+            self.signal_generator.setModulationState(True)
         
     def displayAlert(self, text):
         self.alert = QMessageBox()
@@ -577,14 +591,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pixmap = QPixmap('broadcast-on.png')
             self.power_start_time = time.time()
             self.field_timer.start(100)  # Update every 100 ms
+            self.pushButton_rfOn.setText('RF On')
         else:
             pixmap = QPixmap('broadcast-off.png')
             self.field_timer.stop()
+            self.pushButton_rfOn.setText('RF Off')
         scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_rfOutState.setPixmap(scaledPixmap)
         self.output_on = on
-        self.pushButton_rfOn.setEnabled(not on)
-        self.pushButton_rfOff.setEnabled(on)
         if self.comboBox_amplifier.currentIndex() == 0 or self.comboBox_antenna.currentIndex() == 0:
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
@@ -644,8 +658,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progressBar_freqSweep.setValue(int(percent))
         
     def on_sigGen_modStateSet(self, on: bool):
-        self.pushButton_modulationOn.setEnabled(not on)
-        self.pushButton_modulationOff.setEnabled(on)
+        if on:
+            self.pushButton_modulationOn.setText('Modulation On')
+        else:
+            self.pushButton_modulationOn.setText('Modulation Off')
+        #self.pushButton_modulationOff.setEnabled(on)
         self.modulation_on = on
     
     def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
