@@ -33,6 +33,7 @@ class FieldController(QObject):
             
         # Initialize the field controller parameters
         self.is_sweeping = False
+        self.last_step = False
         self.high_field_detected = False
         self.target_field = 1.0
         self.threshold = 1.5
@@ -85,6 +86,7 @@ class FieldController(QObject):
     def start_sweep(self):
         """Start the frequency sweep with the specified range, dwell and step term."""
         self.is_sweeping = True
+        self.last_step = False
         self.current_freq = self.start_freq
         # Set the signal generator to low power to start
         self.signal_generator.setPower(self.base_power)
@@ -131,15 +133,20 @@ class FieldController(QObject):
 
             # Move to the next frequency step
             self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
-
+            if self.last_step:
+                self.is_sweeping = False
+            if self.current_freq > self.stop_freq:
+                self.current_freq = self.stop_freq
+                self.last_step = True
         else:
+            
             # Sweep is complete
             print("Sweep Completed")
             self.sweepCompleted.emit()
             self.is_sweeping = False
             self.signal_generator.setRFOut(False)
             self.signal_generator.setModulationState(False)
-            self.frequencyUpdated.emit(self.stop_freq)
+            self.frequencyUpdated.emit(self.current_freq)
             self.sweepStatus.emit(100.0)
             
     #def start_adjustment(self):
