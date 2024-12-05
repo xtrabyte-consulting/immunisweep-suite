@@ -26,31 +26,6 @@
     <layout class="QGridLayout" name="gridLayout_2">
      <item row="1" column="0">
       <layout class="QGridLayout" name="gridLayout_8">
-       <item row="3" column="1">
-        <widget class="QProgressBar" name="progressBar_freqSweep">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>100</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>238</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="value">
-          <number>24</number>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="0">
         <widget class="QPushButton" name="pushButton_startSweep">
          <property name="sizePolicy">
@@ -72,7 +47,7 @@
           </size>
          </property>
          <property name="text">
-          <string>Sweep On</string>
+          <string>Start Sweep</string>
          </property>
         </widget>
        </item>
@@ -98,6 +73,31 @@
          </property>
          <property name="text">
           <string>RF ON</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="pushButton_modulationOn">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>216</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>216</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Modulation On</string>
          </property>
         </widget>
        </item>
@@ -130,8 +130,8 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="pushButton_modulationOn">
+       <item row="3" column="1">
+        <widget class="QPushButton" name="pushButton_pauseSweep">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -151,7 +151,36 @@
           </size>
          </property>
          <property name="text">
-          <string>Modulation On</string>
+          <string>Stop Sweep</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="label_modulationState">
+         <property name="minimumSize">
+          <size>
+           <width>64</width>
+           <height>64</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>500</width>
+           <height>64</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>18</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
