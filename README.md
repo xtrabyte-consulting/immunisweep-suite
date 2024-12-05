@@ -26,3 +26,5 @@
 ### Resources.qrc/py
 
 - UI Asset resource files for bundling application across Operating Systems.
+
+<a href="https://www.flaticon.com/free-icons/sound-waves" title="sound waves icons">Sound waves icons created by juicy_fish - Flaticon</a>

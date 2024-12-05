@@ -258,6 +258,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pixmap = QPixmap('battery.png')
         scaledPixmap = pixmap.scaled(48, 48, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_chargeTitle.setPixmap(scaledPixmap)
+        mod_pixmap = QPixmap('modulation-off.png')
+        scaled_mod_pixmap = mod_pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_modulationState.setPixmap(scaled_mod_pixmap)
         
         self.startDeviceDetection()
         
@@ -651,8 +654,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_sigGen_modStateSet(self, on: bool):
         if on:
             self.pushButton_modulationOn.setText('Modulation On')
+            mod_pixmap = QPixmap('modulation-on.png')
         else:
             self.pushButton_modulationOn.setText('Modulation Off')
+            mod_pixmap = QPixmap('modulation-off.png')
+        scaled_mod_pixmap = mod_pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        self.label_modulationState.setPixmap(scaled_mod_pixmap)
         self.modulation_on = on
     
     def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
