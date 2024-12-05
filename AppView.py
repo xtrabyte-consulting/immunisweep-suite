@@ -129,6 +129,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_controller.sweepCompleted.connect(self.on_fieldController_sweepCompleted)
         self.field_controller.sweepStatus.connect(self.on_fieldController_sweepStatus)
         self.field_controller.highFieldDetected.connect(self.on_fieldController_highFieldDetected)
+        self.field_controller.powerLimitExceeded.connect(self.on_fieldController_powerLimitExceeded)
         self.field_controller.startDwell.connect(self.start_dwell_timer)
         #Start the thread
         self.field_controller_thread.start()
@@ -403,6 +404,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(str)            
     def on_fieldController_highFieldDetected(self, message: str):
         self.displaySingleAlert(f"High Field Detected. Check log at {message} for details.")
+        
+    @pyqtSlot(str)
+    def on_fieldController_powerLimitExceeded(self, message: str):
+        self.displaySingleAlert(message)
+        self.field_controller.stop_sweep()
 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")

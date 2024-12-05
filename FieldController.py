@@ -16,6 +16,7 @@ class FieldController(QObject):
     sweepCompleted = pyqtSignal()
     sweepStatus = pyqtSignal(float)
     highFieldDetected = pyqtSignal(str)
+    powerLimitExceeded = pyqtSignal(str)
     startDwell = pyqtSignal(int)
     
     def __init__(self, signal_generator: AgilentN5181A, field_probe: ETSLindgrenHI6006, pid_controller: PID | None):
@@ -282,6 +283,7 @@ class FieldController(QObject):
         
     def adjust_power_to_target_level(self):
         """Adjust the power level based on probe readings to return to target field level."""
+        power_limit_exceeded = False
         while True:
             # Get the current field level from the field probe
             sleep(0.005)
@@ -303,6 +305,7 @@ class FieldController(QObject):
                     #self.is_sweeping = False
                 warning_message = f'Field level exceeded 2x target level: {current_field_level} V/m \n At frequency: {self.current_freq} MHz \n And power: {self.current_power} dBm'
                 self.log_warning(warning_message)
+                self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
@@ -325,6 +328,17 @@ class FieldController(QObject):
                 elif current_field_level > (self.target_field * self.threshold):
                     self.current_power -= 1
                 print(f"Setting power to: {self.current_power}")
+                if self.current_power > 10.0:
+                    if not power_limit_exceeded:
+                        power_limit_exceeded = True
+                        warning_message = f'Power limit exceeded: {self.current_power} dBm at frequency: {self.current_freq} MHz and field level: {current_field_level} V/m. Please check hardware connection.'
+                        self.powerLimitExceeded.emit(warning_message)
+                    self.current_power = self.base_power
+                    self.current_power = self.signal_generator.setPower(self.current_power)
+                    self.powerUpdated.emit(self.current_power)
+                    self.is_sweeping = False
+                    # Move to the next frequency step
+                    break
                 self.current_power = self.signal_generator.setPower(self.current_power)
                 print(f"Power set to: {self.current_power}")
             else:
