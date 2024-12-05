@@ -358,10 +358,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_pushButton_rfState_pressed(self):
         if self.output_on:
             self.signal_generator.setRFOut(False)
-            self.pushButton_rfOn.setText('RF Off')
+            #self.pushButton_rfOn.setText('RF Off')
         else:
             self.signal_generator.setRFOut(True)
-            self.pushButton_rfOn.setText('RF On')
+            #self.pushButton_rfOn.setText('RF On')
     
     def on_connectFieldProbeButton_pressed(self):
         self.field_probe.start()
@@ -408,7 +408,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(str)
     def on_fieldController_powerLimitExceeded(self, message: str):
         self.displaySingleAlert(message)
-        self.field_controller.stop_sweep()
+        #self.field_controller.stop_sweep()
 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
@@ -507,11 +507,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def pushButton_modulationState_pressed(self):
         if self.modulation_on:
-            self.pushButton_modulationOn.setText('Modulation Off')
+            #self.pushButton_modulationOn.setText('Modulation Off')
+            #mod_pixmap = QPixmap('modulation-off.png')
             self.signal_generator.setModulationState(False)
         else:
-            self.pushButton_modulationOn.setText('Modulation On')
+            #self.pushButton_modulationOn.setText('Modulation On')
+            #mod_pixmap = QPixmap('modulation-on.png')
             self.signal_generator.setModulationState(True)
+        #scaled_mod_pixmap = mod_pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
+        #self.label_modulationState.setPixmap(scaled_mod_pixmap)
         
     def displayAlert(self, text):
         self.alert = QMessageBox()

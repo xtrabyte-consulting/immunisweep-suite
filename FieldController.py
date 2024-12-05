@@ -343,7 +343,7 @@ class FieldController(QObject):
                     self.current_power = self.base_power
                     self.current_power = self.signal_generator.setPower(self.current_power)
                     self.powerUpdated.emit(self.current_power)
-                    self.is_sweeping = False
+                    self.stop_sweep()
                     # Move to the next frequency step
                     break
                 self.current_power = self.signal_generator.setPower(self.current_power)
