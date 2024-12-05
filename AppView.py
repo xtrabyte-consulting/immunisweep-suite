@@ -190,7 +190,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.doubleSpinBox_sweepTerm.valueChanged.connect(self.on_spinBox_sweepTerm_valueChanged)
         self.doubleSpinBox_sweepTerm.setStyleSheet('QDoubleSpinBox { color: white; }')
         self.pushButton_startSweep.pressed.connect(self.on_pushButton_startSweep_pressed)
-        #self.pushButton_pauseSweep.pressed.connect(self.on_pushButton_pauseSweep_pressed)
+        self.pushButton_pauseSweep.pressed.connect(self.on_pushButton_pauseSweep_pressed)
         
         # Output Modulation Control
         self.spinBox_modDepth.valueChanged[float].connect(self.spinBox_modDepth_valueChanged)
@@ -248,7 +248,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_validSettings.setStyleSheet('color: red')
         
         # Other UI Setup
-        #self.pushButton_pauseSweep.setEnabled(False)
+        self.pushButton_pauseSweep.setEnabled(False)
         pixmap = QPixmap('broadcast-off.png')
         scaledPixmap = pixmap.scaled(64, 64, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_rfOutState.setPixmap(scaledPixmap)
@@ -258,10 +258,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pixmap = QPixmap('battery.png')
         scaledPixmap = pixmap.scaled(48, 48, QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation)
         self.label_chargeTitle.setPixmap(scaledPixmap)
-        self.progressBar_freqSweep.setValue(0)
-        self.progressBar_freqSweep.setHidden(True)
-        
-        self.pushButton_startSweep.setText('Sweep Off')
         
         self.startDeviceDetection()
         
@@ -320,6 +316,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif amplifier == '--Please Select--':
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
+            self.pushButton_modulationOn.setEnabled(False)
             return
         self.applyFrequencyLimits(self.spinBox_startFreq.value(), self.spinBox_stopFreq.value())
         
@@ -344,6 +341,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif antenna == '--Please Select--':
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
+            self.pushButton_modulationOn.setEnabled(False)
             return
         self.applyFrequencyLimits(self.spinBox_startFreq.value(), self.spinBox_stopFreq.value())
                 
@@ -371,7 +369,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_startFreq.setEnabled(enabled)
         self.spinBox_stopFreq.setEnabled(enabled)
         self.spinBox_dwell.setEnabled(enabled)
-        
+        self.pushButton_startSweep.setEnabled(enabled)
+        self.pushButton_pauseSweep.setEnabled(not enabled)
         
     def applyFrequencyLimits(self, start_freq: float, stop_freq: float) -> bool:
         print(f"Start Frequency: {start_freq}, Stop Frequency: {stop_freq}, Min: {self.equipment_limits.getMinFrequency()}, Max: {self.equipment_limits.getMaxFrequency()}")
@@ -380,18 +379,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_validSettings.setStyleSheet('color: red')
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
+            self.pushButton_modulationOn.setEnabled(False)
             valid = False
         elif start_freq > self.equipment_limits.getMaxFrequency() or stop_freq > self.equipment_limits.getMaxFrequency():
             self.label_validSettings.setText('Invalid Setting: Frequency Too High')
             self.label_validSettings.setStyleSheet('color: red')
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
+            self.pushButton_modulationOn.setEnabled(False)
             valid = False
         else:
             self.label_validSettings.setText('Valid Settings')
             self.label_validSettings.setStyleSheet('color: green')
             self.pushButton_startSweep.setEnabled(True)
             self.pushButton_rfOn.setEnabled(True)
+            self.pushButton_modulationOn.setEnabled(True)
             valid = True
         return valid
     
@@ -441,29 +443,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_plot.rescale_plot(self.field_controller.getStartFrequency(), self.field_controller.getStopFrequency(), 0.0, (self.field_controller.getTargetField() * 3.0))
     
     def on_pushButton_startSweep_pressed(self):
-        if self.field_controller.is_sweeping:
-            print("Push Button Stop Sweep")
-            #self.sweep_in_progress = False
-            #self.toggleSweepUI(enabled=True)
-            self.pushButton_startSweep.setText('Sweep Off')
-            self.progressBar_freqSweep.setHidden(True)
-            self.field_controller.stop_sweep()
-        else:
-            print("Push Button Start Sweep")
-            self.sweep_plot.clear_plot()
-            self.sweep_start_time = time.time()
-            #self.sweep_in_progress = True
-            self.sweep_timer.start(100)  # Update every 100 ms
-            self.field_timer.start(100)  # Update every 10 ms
-            self.pushButton_startSweep.setText('Sweep On')
-            self.progressBar_freqSweep.setHidden(False)
-            #self.toggleSweepUI(enabled=False)
-            self.field_controller.start_sweep()
+        self.sweep_plot.clear_plot()
+        self.sweep_start_time = time.time()
+        self.sweep_in_progress = True
+        self.sweep_timer.start(100)
+        self.field_timer.start(100)
+        self.toggleSweepUI(enabled=False)
+        self.field_controller.start_sweep()
     
-    '''   
     def on_pushButton_pauseSweep_pressed(self):
         self.field_controller.stop_sweep()
-    ''' 
     
     def complete_sweep(self):    
         self.sweep_timer.stop()
@@ -604,6 +593,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.comboBox_amplifier.currentIndex() == 0 or self.comboBox_antenna.currentIndex() == 0:
             self.pushButton_startSweep.setEnabled(False)
             self.pushButton_rfOn.setEnabled(False)
+            self.pushButton_modulationOn.setEnabled(False)
             self.label_validSettings.setText('Please Select Antenna and Amplifier')
             self.label_validSettings.setStyleSheet('color: red')
         self.field_controller.pid_controller.clear()
@@ -657,14 +647,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_fieldController_sweepStatus(self, percent: float):
         self.lcdNumber_sweepProgress.display(percent)
-        self.progressBar_freqSweep.setValue(int(percent))
         
     def on_sigGen_modStateSet(self, on: bool):
         if on:
             self.pushButton_modulationOn.setText('Modulation On')
         else:
             self.pushButton_modulationOn.setText('Modulation Off')
-        #self.pushButton_modulationOff.setEnabled(on)
         self.modulation_on = on
     
     def on_sigGen_modFrequencySet(self, modType: int, frequency: float):
