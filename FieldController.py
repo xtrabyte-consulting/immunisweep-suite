@@ -137,6 +137,7 @@ class FieldController(QObject):
             self.sweepCompleted.emit()
             self.is_sweeping = False
             self.signal_generator.setRFOut(False)
+            self.signal_generator.setModulationState(False)
             self.frequencyUpdated.emit(self.stop_freq)
             self.sweepStatus.emit(100.0)
             

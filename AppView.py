@@ -403,7 +403,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(str)            
     def on_fieldController_highFieldDetected(self, message: str):
         self.displaySingleAlert(f"High Field Detected. Check log at {message} for details.")
-        #self.field_controller.stop_sweep()
 
     def on_spinBox_startFreq_valueChanged(self, freq: float):
         print(f"Spin box value changed: Types: {type(freq)}")
@@ -652,6 +651,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lcdNumber_sweepProgress.display(percent)
         
     def on_sigGen_modStateSet(self, on: bool):
+        print("Modulation State Set: " + str(on))
         if on:
             self.pushButton_modulationOn.setText('Modulation On')
             mod_pixmap = QPixmap('modulation-on.png')
