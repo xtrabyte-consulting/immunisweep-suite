@@ -430,6 +430,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.reset_sweep_plot_view()
 
     def on_spinBox_dwell_valueChanged(self, time: float):
+        print(f"Dwell Time: {time}")
         self.dwell_time = float(time)
         self.field_controller.setDwellTime(float(time), self.comboBox_dwellUnit.currentText())
         self.reset_sweep_plot_view()

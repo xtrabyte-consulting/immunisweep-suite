@@ -238,11 +238,13 @@ class FieldController(QObject):
         return self.stop_freq
         
     def setDwellTime(self, dwell_time: float, unit: str):
+        print(f"Setting dwell time to: {dwell_time} {unit}")
         if unit == Time.Microsecond.value:
             dwell_time *= 0.001
         elif unit == Time.Second.value:
             dwell_time *= 1000
         self.dwell_time_ms = dwell_time
+        print(f"Dwell time set to: {self.dwell_time_ms} ms")
         
     def setSweepTerm(self, sweep_term: float):
         self.sweep_term = sweep_term
@@ -336,7 +338,7 @@ class FieldController(QObject):
                     self.current_power -= 1
                 print(f"Setting power to: {self.current_power}")
                 if self.current_power > 10.0:
-                    if current_field_level < 0.5:
+                    if current_field_level <= 0.5:
                         if not power_limit_exceeded:
                             power_limit_exceeded = True
                             warning_message = f'Power limit exceeded: {self.current_power} dBm at frequency: {self.current_freq} MHz and field level: {current_field_level} V/m. \nAborting sweep. Please check hardware connection.'
