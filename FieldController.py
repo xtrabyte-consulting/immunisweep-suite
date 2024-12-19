@@ -243,7 +243,7 @@ class FieldController(QObject):
             dwell_time *= 0.001
         elif unit == Time.Second.value:
             dwell_time *= 1000
-        self.dwell_time_ms = dwell_time
+        self.dwell_time_ms = int(dwell_time)
         print(f"Dwell time set to: {self.dwell_time_ms} ms")
         
     def setSweepTerm(self, sweep_term: float):

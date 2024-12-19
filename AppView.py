@@ -277,8 +277,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_probe.start()
     
     def start_dwell_timer(self, time: int):
-        print(f"Starting Dwell Timer for {time} ms")
-        self.dwell_timer.start(time)
+        print(f"Starting Dwell Timer for {int(time)} ms")
+        self.dwell_timer.start(int(time))
         
     def on_dwell_complete(self):
         print("Dwell Complete, stepping sweep...")
