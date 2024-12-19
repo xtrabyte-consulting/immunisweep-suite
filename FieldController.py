@@ -336,16 +336,29 @@ class FieldController(QObject):
                     self.current_power -= 1
                 print(f"Setting power to: {self.current_power}")
                 if self.current_power > 10.0:
-                    if not power_limit_exceeded:
-                        power_limit_exceeded = True
-                        warning_message = f'Power limit exceeded: {self.current_power} dBm at frequency: {self.current_freq} MHz and field level: {current_field_level} V/m. Please check hardware connection.'
-                        self.powerLimitExceeded.emit(warning_message)
-                    self.current_power = self.base_power
-                    self.current_power = self.signal_generator.setPower(self.current_power)
-                    self.powerUpdated.emit(self.current_power)
-                    self.stop_sweep()
-                    # Move to the next frequency step
-                    break
+                    if current_field_level < 0.5:
+                        if not power_limit_exceeded:
+                            power_limit_exceeded = True
+                            warning_message = f'Power limit exceeded: {self.current_power} dBm at frequency: {self.current_freq} MHz and field level: {current_field_level} V/m. \nAborting sweep. Please check hardware connection.'
+                            self.powerLimitExceeded.emit(warning_message)
+                        self.current_power = self.base_power
+                        self.current_power = self.signal_generator.setPower(self.current_power)
+                        self.powerUpdated.emit(self.current_power)
+                        self.stop_sweep()
+                        break
+                    else:
+                        if not power_limit_exceeded:
+                            warning_message = f'Power limit exceeded: {self.current_power} dBm at frequency: {self.current_freq} MHz and field level: {current_field_level} V/m. \nIssue logged. Continuing sweep.'
+                            self.powerLimitExceeded.emit(warning_message)
+                            power_limit_exceeded = True
+                        warning_message = f'Field level below target level: {current_field_level} V/m, \n at frequency: {self.current_freq} MHz, \n and power: {self.current_power} dBm'
+                        self.log_warning(warning_message)
+                        self.current_power = self.base_power
+                        self.current_power = self.signal_generator.setPower(self.current_power)
+                        self.powerUpdated.emit(self.current_power)
+                        self.fieldUpdated.emit(current_field_level, x, y, z)
+                        # Move to the next frequency step
+                        break
                 self.current_power = self.signal_generator.setPower(self.current_power)
                 print(f"Power set to: {self.current_power}")
             else:
