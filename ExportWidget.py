@@ -11,6 +11,7 @@ class ExportWidget(QWidget):
         # Create buttons
         self.csv_button = QPushButton("Save to CSV")
         self.docx_button = QPushButton("Save to DOCX")
+        self.cancel_button = QPushButton("Cancel")
         self.csv_button.setToolTip("Save the data to a CSV file")
         self.docx_button.setToolTip("Save the data to a DOCX file")
         self.label = QLabel("Test Complete. Export sweep data?")
@@ -18,6 +19,7 @@ class ExportWidget(QWidget):
         # Connect signals
         self.csv_button.clicked.connect(self.save_csv)
         self.docx_button.clicked.connect(self.save_docx)
+        self.cancel_button.clicked.connect(self.close)
 
         # Layout
         layout = QVBoxLayout()
@@ -35,11 +37,13 @@ class ExportWidget(QWidget):
         file_name, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv)")
         if file_name:
             self.save_to_csv(self.output_powers, file_name)
+        self.close()
 
     def save_docx(self):
         file_name, _ = QFileDialog.getSaveFileName(self, "Save DOCX File", "", "Word Documents (*.docx)")
         if file_name:
             self.save_to_docx(self.output_powers, file_name)
+        self.close()
 
     def save_to_csv(self, filename=f"output_powers_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"):
         with open(filename, mode="w", newline="") as file:

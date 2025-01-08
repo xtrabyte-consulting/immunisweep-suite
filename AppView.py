@@ -20,11 +20,13 @@ from FieldController import FieldController
 from LivePlot import FrequencyPlot, PowerPlot
 from PID import PIDController
 from EquipmentLimits import EquipmentLimits
+from ExportWidget import ExportWidget
 
 import os
 import sys
 import math
 import time
+from datetime import datetime
 
 import signal
 from PyQt5.QtCore import QResource
@@ -156,6 +158,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.equipment_limits = EquipmentLimits(0.1, 0.1, 6000.0, 6000.0, 15.0)
         self.sweep_start_time = time.time()
         self.power_start_time = time.time()
+        self.field_data = []
         
         self.single_alert_window = None
         
@@ -453,6 +456,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_pushButton_startSweep_pressed(self):
         self.sweep_plot.clear_plot()
+        self.field_data = []
         self.sweep_start_time = time.time()
         self.sweep_in_progress = True
         self.sweep_timer.start(100)
@@ -466,7 +470,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def complete_sweep(self):    
         self.sweep_timer.stop()
         self.toggleSweepUI(enabled=True)
-                
+        
     def spinBox_modDepth_valueChanged(self, percent: float):
         self.signal_generator.setAMLinearDepth(float(percent))
     
@@ -573,6 +577,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.x_field = x
         self.y_field = y
         self.z_field = z
+        current_field = (self.output_frequency, composite)
+        self.field_data.append(current_field)
         
     def update_field_data_plot(self):
         self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
@@ -657,6 +663,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_fieldController_sweepCompleted(self):
         self.complete_sweep()
+        self.export_field_data()
+        
+    def export_field_data(self):
+        self.export_widget = ExportWidget(self.field_data)
+        self.export_widget.show()
         
     def on_fieldController_sweepStatus(self, percent: float):
         self.lcdNumber_sweepProgress.display(percent)
