@@ -584,6 +584,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
     
     def on_fieldProbe_batteryReceived(self, level: int):
+        if level < 10:
+            self.displaySingleAlert("ETS-Lindgren HI-6006: Low Battery")
+        if level > 100:
+            level = 100
         self.label_chargeLevel.setText(f'{str(level)} %')
         
     def on_fieldProbe_temperatureReceived(self, temp: float):
