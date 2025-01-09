@@ -46,8 +46,7 @@ class ExportWidget(QWidget):
         file_name, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv)")
         if file_name:
             try:
-                with open(file_name, 'w') as file:
-                    self.save_to_csv(self.field_levels, self.evaluation_input.text(), self.criteria_input.text(), file)
+                self.save_to_csv(self.field_levels, self.evaluation_input.text(), self.criteria_input.text(), file_name)
                 QMessageBox.information(self, "Success", f"Text saved to {file_name}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
@@ -57,8 +56,7 @@ class ExportWidget(QWidget):
         file_name, _ = QFileDialog.getSaveFileName(self, "Save DOCX File", "", "Word Documents (*.docx)")
         if file_name:
             try:
-                with open(file_name, 'w') as file:
-                    self.save_to_docx(self.field_levels, self.evaluation_input.text(), self.criteria_input.text(), file)
+                self.save_to_docx(self.field_levels, self.evaluation_input.text(), self.criteria_input.text(), file_name)
                 QMessageBox.information(self, "Success", f"Text saved to {file_name}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
