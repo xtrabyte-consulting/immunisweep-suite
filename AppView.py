@@ -577,10 +577,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.x_field = x
         self.y_field = y
         self.z_field = z
-        current_field = (self.output_frequency, composite)
-        self.field_data.append(current_field)
         
     def update_field_data_plot(self):
+        current_field = (self.output_frequency, self.measured_field_strength)
+        self.field_data.append(current_field)
         self.field_plot.update_plot(self.output_frequency, setpoint = self.field_controller.getTargetField(), composite=self.measured_field_strength, x=self.x_field, y=self.y_field, z=self.z_field)
     
     def on_fieldProbe_batteryReceived(self, level: int):
