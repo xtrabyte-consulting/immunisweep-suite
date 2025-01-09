@@ -460,7 +460,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sweep_start_time = time.time()
         self.sweep_in_progress = True
         self.sweep_timer.start(100)
-        self.field_timer.start(100)
+        self.field_timer.start(500)
         self.toggleSweepUI(enabled=False)
         self.field_controller.start_sweep()
     
@@ -604,7 +604,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.field_plot.clear_plot()
             pixmap = QPixmap('broadcast-on.png')
             self.power_start_time = time.time()
-            self.field_timer.start(100)  # Update every 100 ms
+            #self.field_timer.start(100)  # Update every 100 ms
             self.pushButton_rfOn.setText('RF On')
         else:
             pixmap = QPixmap('broadcast-off.png')
