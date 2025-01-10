@@ -201,10 +201,12 @@ class FieldController(QObject):
             sleep(0.005)
             # Call a direct blocking method to get the true field strength right now
             current_field_level, x, y, z = self.field_probe.readCurrentField()
+            self.current_field_level = current_field_level
+            self.current_x = x
+            self.current_y = y
+            self.current_z = z
             
             print(f"Current Field Level: {current_field_level} V/m")
-            # Emit signal to update the UI with the field level
-            self.fieldUpdated.emit(current_field_level, x, y, z)
             
             # Check if the field level is too high. If so, stop the sweep
             # shut off the RF output and emit a signal to notify the user
@@ -217,17 +219,11 @@ class FieldController(QObject):
                     #self.is_sweeping = False
                 warning_message = f'Field level exceeded 2x target level: {current_field_level} V/m \n At frequency: {self.current_freq} MHz \n And power: {self.current_power} dBm'
                 self.log_warning(warning_message)
-                self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
             if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
                 print(f"Field level within threshold: {current_field_level}")
                 #current_field_level, x, y, z = self.field_probe.readCurrentField()
-                self.current_field_level = current_field_level
-                self.current_x = x
-                self.current_y = y
-                self.current_z = z
-                self.fieldUpdated.emit(current_field_level, x, y, z)
                 break
             
             self.current_power = self.signal_generator.getPower()
@@ -261,7 +257,6 @@ class FieldController(QObject):
                         self.current_power = self.base_power
                         self.current_power = self.signal_generator.setPower(self.current_power)
                         self.powerUpdated.emit(self.current_power)
-                        self.fieldUpdated.emit(current_field_level, x, y, z)
                         # Move to the next frequency step
                         break
                 self.current_power = self.signal_generator.setPower(self.current_power)
