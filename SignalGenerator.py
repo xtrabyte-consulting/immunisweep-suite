@@ -297,11 +297,7 @@ class AgilentN5181A(QObject):
     modCouplingSet = pyqtSignal(int, bool)
     amTypeSet = pyqtSignal(bool)
     modDepthSet = pyqtSignal(float)
-    #frequencySet = pyqtSignal(float)
-    #powerSet = pyqtSignal(float)
     rfOutSet = pyqtSignal(bool)
-    #sweepFinished = pyqtSignal()
-    #sweepStatus = pyqtSignal(float)
     
     def __init__(self, ip_address: str = '192.168.100.79',  port: int = 5024):
         super().__init__()
@@ -355,7 +351,6 @@ class AgilentN5181A(QObject):
         try:
             self.instrument = socketscpi.SocketInstrument(self.ip_address)
             self.instrumentConnected.emit(self.instrument.instId)
-            #print(f'Connected To: {self.instrument.instId}')
             self.write_thread = threading.Thread(target=self.writeSCPI)
             self.is_running = True
             self.clearing = False
@@ -378,10 +373,6 @@ class AgilentN5181A(QObject):
     
     def initInstrument(self):
         self.commandQueue.put((SCPI.Identity, ''))
-    
-    #def setFrequency(self, freq: float):
-        # Assume MHz
-    #    self.setFrequency(self, freq, Frequency.MHz.value)
         
     def setFrequency(self, freq: float, unit: str):
         if unit == Frequency.GHz.value:
@@ -408,7 +399,6 @@ class AgilentN5181A(QObject):
         print(f'Setting Power to: {pow}')
         self.instrument.write(f'{SCPI.Power.value} {str(round(pow, 3))} {SCPI.dBm.value}')
         complete = self.instrument.query(SCPI.OperationComplete.value)
-        #if complete:
         self.power = float(self.instrument.query(f'{SCPI.Power.value}?'))
         return self.power
     
@@ -432,7 +422,6 @@ class AgilentN5181A(QObject):
             self.commandQueue.put((SCPI.AMState, f'{SCPI.AMState.value} {SCPI.Off.value}'))
             self.commandQueue.put((SCPI.PMState, f'{SCPI.PMState.value} {SCPI.On.value}'))
     
-    # TODO: Ranges, coupling, normal/deep/high
     def setModulationState(self, on: bool):
         self.commandQueue.put((SCPI.ModulationState, f'{SCPI.ModulationState.value} {SCPI.On.value if on else SCPI.Off.value}'))
     
@@ -536,8 +525,7 @@ class AgilentN5181A(QObject):
         try:
             self.instrument.err_check()
         except socketscpi.SockInstError as e:
-            print(e)
-            #self.error_occured.emit(e)
+            self.error.emit(e)
 
     def setSweepType(self, exp: bool):
         if exp:
@@ -625,10 +613,6 @@ class AgilentN5181A(QObject):
                 print("Stepping to next frequency..." + str(current))
                 self.setFrequency(current, Frequency.kHz.value)
                 self.sweepStatus.emit(self.log_percentage(current, start, stop))
-                
-        #if self.runSweep:
-        #    self.setFrequency(stop, Frequency.kHz.value)
-        #    time.sleep(dwell)
         self.sweepFinished.emit()
         
     def stepSweep(self):
@@ -654,7 +638,6 @@ class AgilentN5181A(QObject):
                     break
                 self.instrument.write(commandValue)
                 complete = self.instrument.query(SCPI.OperationComplete.value)
-                #if complete:
                 state = self.instrument.query(f'{commandType.value}?')
                 if commandType == SCPI.Identity: 
                     self.instrumentConnected.emit(state)
@@ -662,10 +645,8 @@ class AgilentN5181A(QObject):
                     self.rfOutSet.emit(bool(int(float(state))))
                 elif commandType == SCPI.Power:
                     print(f'Power: {state}')
-                    #self.powerSet.emit(float(state))
                     self.power = float(state)
                 elif commandType == SCPI.Frequency:
-                    #self.frequencySet.emit(float(state))
                     self.frequency = float(state)
                 elif commandType == SCPI.ModulationState:
                     self.modStateSet.emit(bool(int(state)))
