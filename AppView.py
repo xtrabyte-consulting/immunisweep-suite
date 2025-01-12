@@ -26,6 +26,7 @@ import os
 import sys
 import math
 import time
+import numpy as np
 from datetime import datetime
 
 import signal
@@ -590,7 +591,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             level = 100
         self.label_chargeLevel.setText(f'{str(level)} %')
         
-    def on_fieldProbe_temperatureReceived(self, temp: float):
+    def on_fieldProbe_temperatureReceived(self, temp: int):
+        signed_temp = np.int8(temp)
         self.label_temperature.setText(f'{str(temp)} °F')
     
     def on_fieldProbe_fieldProbeError(self, message: str):
