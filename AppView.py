@@ -593,7 +593,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def on_fieldProbe_temperatureReceived(self, temp: int):
         signed_temp = np.int8(temp)
-        self.label_temperature.setText(f'{str(temp)} °F')
+        self.label_temperature.setText(f'{str(signed_temp)} °F')
     
     def on_fieldProbe_fieldProbeError(self, message: str):
         self.displaySingleAlert("ETS-Lindgren HI-6006:" + message)
