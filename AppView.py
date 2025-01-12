@@ -646,8 +646,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Initialize sig gen to match UI
         self.signal_generator.setRFOut(False)
         self.signal_generator.setModulationState(False)
-        self.signal_generator.setStartFrequency(300.0)
-        self.signal_generator.setStopFrequency(1000.0)
         self.signal_generator.setFrequency(300.0, Frequency.MHz.value)
         self.signal_generator.setPower(-30.0)
         

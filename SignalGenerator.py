@@ -306,14 +306,14 @@ class AgilentN5181A(QObject):
         self.instrument = None
         self.is_running = False
         self.power = 0.0
-        self.frequency = 100.0
+        self.frequency = 300.0
         self.commandQueue = queue.Queue()
         self.write_thread = None
         self.runSweep = False
         self.commandLock = threading.Lock()
         self.sweepType = Sweep.OFF
-        self.startFrequency = 100.0
-        self.stopFrequency = 6000.0
+        self.startFrequency = 300.0
+        self.stopFrequency = 1000.0
         self.stepDwell = 0.5
         self.stepCount = 100
         self.clearing = False
@@ -526,100 +526,6 @@ class AgilentN5181A(QObject):
             self.instrument.err_check()
         except socketscpi.SockInstError as e:
             self.error.emit(e)
-
-    def setSweepType(self, exp: bool):
-        if exp:
-            self.sweepType = Sweep.EXPONENTIAL
-        else:
-            self.sweepType = Sweep.LINEAR
-            
-    def setStartFrequency(self, freq: float):
-        # Convert to kHz
-        self.startFrequency = freq * 1000
-        
-    def getStartFrequency(self) -> float:
-        # Convert back to MHz
-        return self.startFrequency / 1000 
-        
-    def setStopFrequency(self, freq: float):
-        # Convert to kHz
-        self.stopFrequency = freq * 1000
-        
-    def getStopFrequency(self) -> float:
-        # Convert back to MHz
-        return self.stopFrequency / 1000
-    
-    def getDefaultLogarithmicStepCount(self) -> int:
-        steps = math.log(self.stopFrequency / self.startFrequency) / math.log(1.01)
-        print(f'StartFreq: {self.startFrequency}, StopFreq: {self.stopFrequency}, steps: {steps}')
-        self.stepCount = int(steps)
-        return self.stepCount
-    
-    def setStepDwell(self, dwell: float, unit: str):
-        # Convert to Sec
-        if unit == Time.Microsecond.value:
-            dwell *= 0.000001
-        elif unit == Time.Millisecond.value:
-            dwell *= 0.001
-        self.stepDwell = dwell
-        
-    def setSweepTerm(self, term: float):
-        self.sweepTerm = term
-    
-    def getStepCount(self) -> int:
-        steps = math.log(self.stopFrequency / self.startFrequency) / math.log(1.0 + self.sweepTerm)
-        self.stepCount = int(math.ceil(steps))
-        return self.stepCount
-    
-    def getSweepTime(self) -> float:
-        return self.stepDwell * self.getStepCount()
-    
-    def startFrequencySweep(self):
-        self.sweepThread = threading.Thread(target=self.sweepExponential, args=(self.startFrequency, self.stopFrequency, self.sweepTerm, self.stepDwell))
-        self.runSweep = True
-        self.sweepThread.start()
-        
-    def stopFrequencySweep(self):
-        self.runSweep = False
-        if self.sweepThread.is_alive() and self.sweepThread is not None:
-            self.sweepThread.join()
-
-    def sweepLinear(self, start, stop, steps, dwell):
-        traversal = stop - start
-        step = traversal / steps
-        current = start
-        while current <= stop and self.runSweep:
-            self.setFrequency(current, Frequency.kHz.value)
-            current += step
-            self.sweepStatus.emit((current - start) / (stop - start) * 100)
-            time.sleep(dwell)
-        self.sweepFinished.emit()
-    
-
-    def log_percentage(self, curr_val, min_val, max_val):
-        normalized_curr = (math.log(curr_val) - math.log(min_val)) / (math.log(max_val) - math.log(min_val))
-        return normalized_curr * 100
-    
-    def sweepExponential(self, start, stop, term, dwell):
-        current = start
-        print(f'Start: {start}, Ratio: {term}, Stop: {stop}')
-        self.setFrequency(current, Frequency.kHz.value)
-        while current <= stop and self.runSweep:
-            time.sleep(0.1)
-            if self.step_sweep:
-                self.step_sweep = False
-                time.sleep(dwell)
-                current = current + (current * term)
-                print("Stepping to next frequency..." + str(current))
-                self.setFrequency(current, Frequency.kHz.value)
-                self.sweepStatus.emit(self.log_percentage(current, start, stop))
-        self.sweepFinished.emit()
-        
-    def stepSweep(self):
-        self.step_sweep = True
-        
-    def pauseSweep(self):
-        self.pause_sweep = True
     
     def writeSCPI(self):
         print("Starting SCPI comms loop...")
