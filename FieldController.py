@@ -83,32 +83,26 @@ class FieldController(QObject):
 
     def step_sweep(self):
         """Step through the frequency sweep range."""
-        #self.sweep_timer.stop()
         
         # Check if the sweep is still active
         if self.current_freq <= self.stop_freq and self.is_sweeping:
             
-            current_field_level, x, y, z = self.field_probe.readCurrentField()
-        
-            print(f"Current Field Level: {current_field_level} V/m")
-            # Emit signal to update the UI with the field level to make prettier lines
-            
             # Reset signal generator to low power
             self.signal_generator.setPower(self.base_power)
-            sleep(0.005) # Wait for power to stabilize
-            print(f"Current Frequency: {self.current_freq}")
             # Set the signal generator frequency
             self.signal_generator.setFrequency(self.current_freq, Frequency.MHz.value)
-            self.sweepStatus.emit(self.log_percentage(self.current_freq, self.start_freq, self.stop_freq))
-
-            # Emit the signal to update the UI with the new frequency
+            print(f"Current Frequency: {self.current_freq}, Current Power: {self.current_power}")
+            sleep(0.1) # Wait for power to stabilize, field to reach steady state
             
+            # Emit the signal to update the UI with the new frequency
+            self.frequencyUpdated.emit(self.current_freq)
+            self.sweepStatus.emit(self.log_percentage(self.current_freq, self.start_freq, self.stop_freq))
 
             print(f"Adjusting power to target level at {self.current_freq} MHz")
             # Perform closed-loop control to adjust the power
             self.adjust_power_to_target_level()
             
-            self.frequencyUpdated.emit(self.current_freq)
+            self.powerUpdated.emit(self.current_power)
             self.fieldUpdated.emit(self.current_field_level, self.current_x, self.current_y, self.current_z)
             
             print(f"Sleeping for {self.dwell_time_ms} milliseconds")
@@ -208,28 +202,26 @@ class FieldController(QObject):
             
             print(f"Current Field Level: {current_field_level} V/m")
             
-            # Check if the field level is too high. If so, stop the sweep
-            # shut off the RF output and emit a signal to notify the user
+            if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
+                print(f"Field level within threshold: {current_field_level}")
+                break
+            
+            # Check if the field level is too high. If so, emit a signal to notify the user
             if current_field_level > (self.target_field * 2.0):
                 if not self.high_field_detected:
                     self.highFieldDetected.emit(self.log_file_path)
                     self.high_field_detected = True
-                    #self.signal_generator.setPower(self.base_power)
-                    #self.signal_generator.setRFOut(False)
-                    #self.is_sweeping = False
                 warning_message = f'Field level exceeded 2x target level: {current_field_level} V/m \n At frequency: {self.current_freq} MHz \n And power: {self.current_power} dBm'
                 self.log_warning(warning_message)
                 break
             
-            if (current_field_level > self.target_field) and (current_field_level < (self.target_field * self.threshold)):
-                print(f"Field level within threshold: {current_field_level}")
-                #current_field_level, x, y, z = self.field_probe.readCurrentField()
-                break
-            
+            # Get the current power level from the signal generator
             self.current_power = self.signal_generator.getPower()
             
-            if self.use_stepper:
-                print("Using stepper control")
+            if not self.use_stepper:
+                pid_output = self.pid_controller.calculate(current_field_level)
+                self.signal_generator.setPower(pid_output + self.current_power)
+            else:
                 # Adjust the power level based on the current field level
                 if current_field_level < self.target_field:
                     self.current_power += 0.1
@@ -244,7 +236,6 @@ class FieldController(QObject):
                             self.powerLimitExceeded.emit(warning_message)
                         self.current_power = self.base_power
                         self.current_power = self.signal_generator.setPower(self.current_power)
-                        self.powerUpdated.emit(self.current_power)
                         self.stop_sweep()
                         break
                     else:
@@ -256,12 +247,7 @@ class FieldController(QObject):
                         self.log_warning(warning_message)
                         self.current_power = self.base_power
                         self.current_power = self.signal_generator.setPower(self.current_power)
-                        self.powerUpdated.emit(self.current_power)
                         # Move to the next frequency step
                         break
                 self.current_power = self.signal_generator.setPower(self.current_power)
                 print(f"Power set to: {self.current_power}")
-            else:
-                pid_output = self.pid_controller.calculate(current_field_level)
-                self.signal_generator.setPower(pid_output + self.current_power)
-            self.powerUpdated.emit(self.current_power)
