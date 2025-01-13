@@ -629,8 +629,9 @@ class AgilentN5181A(QObject):
                 else:
                     self.count -= 1
                     
+
 class HPE4421B(QObject):
-    identityReceived = pyqtSignal(str, str, str, str)
+    identityReceived = pyqtSignal(str)
     error = pyqtSignal(str)
     modStateSet = pyqtSignal(bool)
     modFreqSet = pyqtSignal(int, float)
@@ -670,10 +671,22 @@ class HPE4421B(QObject):
             self.error.emit(str(e))
             print(f'Error Connection Refused: {str(e)}')
             self.is_running = False
-        except:
-            self.error.emit('Unknown Error')
-            print('Unknown Error Serial Error Connecting to HPE4421B')
+        except Exception as e:
+            self.error.emit(f'Unknown Error: {str(e)}')
+            print(f'Unknown Error Serial Error Connecting to HPE4421B: {str(e)}')
             self.is_running = False
+    
+    def __parse_identity(self, identity: str):
+        self.identityReceived.emit(identity)
+        return identity
+    
+    def __parse_power(self, power: str):
+        self.power = float(power.strip())
+        return self.power
+    
+    def __parse_frequency(self, freq: str):
+        self.frequency = float(freq.strip())
+        return self.frequency
             
     def process_commands(self):
         #TODO: Implement command processing for HPE4421B
