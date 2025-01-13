@@ -95,12 +95,14 @@ class FieldController(QObject):
             sleep(0.1) # Wait for power to stabilize, field to reach steady state
             
             # Emit the signal to update the UI with the new frequency
+            self.current_freq = round(self.signal_generator.getFrequency(), 2)
             self.frequencyUpdated.emit(self.current_freq)
             self.sweepStatus.emit(self.log_percentage(self.current_freq, self.start_freq, self.stop_freq))
 
             print(f"Adjusting power to target level at {self.current_freq} MHz")
             # Perform closed-loop control to adjust the power
             self.adjust_power_to_target_level()
+            
             
             self.powerUpdated.emit(self.current_power)
             self.fieldUpdated.emit(self.current_field_level, self.current_x, self.current_y, self.current_z)
