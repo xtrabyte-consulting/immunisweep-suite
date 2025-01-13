@@ -691,3 +691,38 @@ class HPE4421B(QObject):
     def process_commands(self):
         #TODO: Implement command processing for HPE4421B
         pass
+    
+class SCPICommand:
+    def __init__(self, command, parser=None, timeout=1.0, retries=3):
+        """
+        Initialize a SCPI command object.
+
+        Args:
+            command (str): The SCPI command string to send.
+            parser (callable): A function or callable to parse the response. Defaults to None.
+            timeout (float): Time in seconds to wait for a response. Defaults to 1.0.
+            retries (int): Number of retries if the command fails. Defaults to 3.
+        """
+        self.command = command
+        self.parser = parser
+        self.timeout = timeout
+        self.retries = retries
+
+    def parse_response(self, response):
+        """
+        Parse the response using the assigned parser.
+
+        Args:
+            response (str): The raw response from the device.
+
+        Returns:
+            The parsed response if a parser is provided, otherwise the raw response.
+        """
+        if self.parser:
+            return self.parser(response)
+        return response
+
+    def __repr__(self):
+        return (f"SCPICommand(command={self.command!r}, "
+                f"parser={self.parser.__name__ if self.parser else None}, "
+                f"timeout={self.timeout}, retries={self.retries})")
