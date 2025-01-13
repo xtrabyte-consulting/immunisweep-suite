@@ -2,6 +2,8 @@ import time
 import socketscpi
 import socket
 import threading
+import serial
+from serial import serialutil, SerialException
 import queue
 import ping3
 import math
@@ -621,3 +623,53 @@ class AgilentN5181A(QObject):
                         self.error.emit(f'Network error occurred: {str(e)}')
                 else:
                     self.count -= 1
+                    
+class HPE4421B(QObject):
+    identityReceived = pyqtSignal(str, str, str, str)
+    error = pyqtSignal(str)
+    modStateSet = pyqtSignal(bool)
+    modFreqSet = pyqtSignal(int, float)
+    modDepthSet = pyqtSignal(float)
+    rfOutSet = pyqtSignal(bool)
+    
+    def __init__(self, serial_port: str = 'COM2'):
+        super().__init__()
+        self.serial_port = serial_port
+        self.instrument = None
+        self.is_running = False
+        self.comms_thread = None
+        self.power = 0.0
+        self.frequency = 300.0
+        self.command_queue = queue.Queue()
+        self.command_lock = threading.Lock()
+        self.start_frequency = 300.0
+        self.stop_frequency = 1000.0
+        self.clearing = False
+        self.detected = False
+        
+    def connect_to_instrument(self):
+        try:
+            self.instrument = serial.Serial(self.serial_port, baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=0.5)
+            self.command_thread = threading.Thread(target=self.process_commands)
+            self.is_running = True
+            self.clearing = False
+            self.command_thread.start()
+        except socketscpi.SockInstError as e:
+            self.error.emit(str(e))
+            print(f'Error on connect: {str(e)}')
+            self.is_running = False
+        except socket.timeout as e:
+            self.error.emit(str(e))
+            print(f'Socket Error: {str(e)}')
+        except ConnectionRefusedError as e:
+            self.error.emit(str(e))
+            print(f'Error Connection Refused: {str(e)}')
+            self.is_running = False
+        except:
+            self.error.emit('Unknown Error')
+            print('Unknown Error Serial Error Connecting to HPE4421B')
+            self.is_running = False
+            
+    def process_commands(self):
+        #TODO: Implement command processing for HPE4421B
+        pass
