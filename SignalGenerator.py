@@ -687,6 +687,17 @@ class HPE4421B(QObject):
     def __parse_frequency(self, freq: str):
         self.frequency = float(freq.strip())
         return self.frequency
+    
+    def get_identity(self):
+        self.command_queue.put(SCPICommand(f'{SCPI.Identity}?', self.__parse_identity))
+        
+    def set_frequency(self, freq: float):
+        self.command_queue.put(SCPICommand(f'{SCPI.Frequency} {str(freq)}', parser=None))
+        self.command_queue.put(SCPICommand(f'{SCPI.Frequency}?', self.__parse_frequency))
+        
+    def set_power(self, power: float):
+        self.command_queue.put(SCPICommand(f'{SCPI.Power} {str(power)}', parser=None))
+        self.command_queue.put(SCPICommand(f'{SCPI.Power}?', self.__parse_power))
             
     def process_commands(self):
         #TODO: Implement command processing for HPE4421B
