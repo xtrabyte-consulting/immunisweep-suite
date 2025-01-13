@@ -224,7 +224,6 @@ class ETSLindgrenHI6006(QObject):
     def readWriteProbe(self):
         last_info_update = time.time()
         last_data_update = time.time()
-        alerted = 0
         while not self.stop_probe_event.is_set() and self.is_running:
             if time.time() - last_data_update >= self.data_interval:
                 self.getFieldStrengthMeasurement()

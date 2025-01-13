@@ -530,6 +530,7 @@ class AgilentN5181A(QObject):
             self.error.emit(e)
     
     def writeSCPI(self):
+        last_state_update = time.time()
         print("Starting SCPI comms loop...")
         while self.is_running:
             # This will block until a command is availible
@@ -537,6 +538,10 @@ class AgilentN5181A(QObject):
                 print("Blocking Loop until command Queue is empty.")
                 self.commandQueue.join()
             else:
+                if time.time() - last_state_update > 0.5:
+                    state = self.instrument.query(f'{SCPI.RFOut.value}?')
+                    self.rfOutSet.emit(bool(int(float(state))))
+                    last_state_update = time.time()
                 print("Command queue size: " + str(self.commandQueue.qsize()))
                 command = self.commandQueue.get()
                 commandType = command[0]
