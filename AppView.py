@@ -603,7 +603,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_sigGen_rfOutSet(self, on: bool):
         if on:
-            self.field_plot.clear_plot()
+            #self.field_plot.clear_plot()
             pixmap = QPixmap('broadcast-on.png')
             self.power_start_time = time.time()
             #self.field_timer.start(100)  # Update every 100 ms
