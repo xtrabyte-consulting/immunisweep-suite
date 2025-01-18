@@ -139,7 +139,7 @@ class ETSLindgrenHI6006(QObject):
     serialConnectionError = pyqtSignal(str)
     fieldProbeError = pyqtSignal(str)
     
-    def __init__(self, serial_port: str = 'COM5'):
+    def __init__(self, serial_port: str = 'COM7'):
         super().__init__()
         self.serial_port = serial_port
         self.serial = None
