@@ -95,7 +95,7 @@ class FieldController(QObject):
             sleep(0.1) # Wait for power to stabilize, field to reach steady state
             
             # Emit the signal to update the UI with the new frequency
-            self.current_freq = round(self.signal_generator.getFrequency(), 2)
+            #self.current_freq = round(self.signal_generator.getFrequency(), 2)
             self.frequencyUpdated.emit(self.current_freq)
             self.sweepStatus.emit(self.log_percentage(self.current_freq, self.start_freq, self.stop_freq))
 
@@ -110,13 +110,16 @@ class FieldController(QObject):
             print(f"Sleeping for {self.dwell_time_ms} milliseconds")
             self.startDwell.emit(self.dwell_time_ms)
             
-            print("Power adjusted. Moving to next frequency step.")
+            
 
             # Move to the next frequency step
             self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
+            print("Power adjusted. Moving to next frequency step: ", self.current_freq)
             if self.last_step:
+                print("Last step reached")
                 self.is_sweeping = False
             if self.current_freq > self.stop_freq:
+                print("End of sweep range reached: Last step")
                 self.current_freq = self.stop_freq
                 self.last_step = True
         else:
