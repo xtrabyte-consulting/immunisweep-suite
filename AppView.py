@@ -457,6 +457,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def on_pushButton_startSweep_pressed(self):
         self.sweep_plot.clear_plot()
+        self.field_plot.clear_plot()
         self.field_data = []
         self.sweep_start_time = time.time()
         self.sweep_in_progress = True
