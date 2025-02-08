@@ -413,7 +413,7 @@ class RadiatedImmunity(QMainWindow, Ui_MainWindow):
     def spinBox_modDepth_valueChanged(self, percent: float):
         self.signal_generator.setAMLinearDepth(float(percent))
     
-    def applyModFrequencyUnits(self, freq: float, unit: str) -> (float, str):
+    def applyModFrequencyUnits(self, freq: float, unit: str):
         if unit == Frequency.Hz.value:
             if freq < 0.1:
                 freq = 0.1
