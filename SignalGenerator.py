@@ -715,7 +715,7 @@ class HPE4421B(QObject):
                 self.command_queue.join()
             else:
                 try:
-                    command = self.command_queue.get()
+                    command: SCPICommand = self.command_queue.get()
                     self.instrument.write(command.command.encode())
                     if command.parser:
                         response = self.instrument.readline().decode()
