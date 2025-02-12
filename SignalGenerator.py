@@ -645,17 +645,20 @@ class HPE4421B(QObject):
         self.is_running = False
         self.comms_thread = None
         self.power = 0.0
-        self.frequency = 300.0
+        self.frequency = 150.0
         self.command_queue = queue.Queue()
         self.command_lock = threading.Lock()
-        self.start_frequency = 300.0
-        self.stop_frequency = 1000.0
+        self.start_frequency = 150.0
+        self.stop_frequency = 80000.0
         self.clearing = False
         self.detected = False
         
     def connect_to_instrument(self):
         try:
             self.instrument = serial.Serial(self.serial_port, baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=0.5)
+            
+            self.instrument = serial.Serial('COM3', baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1, xonxoff=False, rtscts=False)
+            self.instrument.setDTR(True)
             self.command_thread = threading.Thread(target=self.process_commands)
             self.is_running = True
             self.clearing = False
@@ -691,6 +694,12 @@ class HPE4421B(QObject):
     def get_identity(self):
         self.command_queue.put(SCPICommand(f'{SCPI.Identity}?', self.__parse_identity))
         
+    def get_power(self):
+        return self.power
+    
+    def get_frequency(self):
+        return self.frequency
+        
     def set_frequency(self, freq: float):
         self.command_queue.put(SCPICommand(f'{SCPI.Frequency} {str(freq)}', parser=None))
         self.command_queue.put(SCPICommand(f'{SCPI.Frequency}?', self.__parse_frequency))
@@ -701,7 +710,20 @@ class HPE4421B(QObject):
             
     def process_commands(self):
         #TODO: Implement command processing for HPE4421B
-        pass
+        while self.is_running:
+            if self.clearing:
+                self.command_queue.join()
+            else:
+                try:
+                    command = self.command_queue.get()
+                    self.instrument.write(command.command.encode())
+                    if command.parser:
+                        response = self.instrument.readline().decode()
+                        command.parse_response(response)
+                except serialutil.SerialException as e:
+                    self.error.emit(str(e))
+                    print(f'Serial Error: {str(e)}')
+    
     
 class SCPICommand:
     def __init__(self, command, parser=None, timeout=1.0, retries=3):
