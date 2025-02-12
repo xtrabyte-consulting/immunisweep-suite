@@ -17,6 +17,8 @@ from PyQt5.QtWidgets import (
 from qt_material import apply_stylesheet
 
 from RadiatedImmunity import RadiatedImmunity
+from ConductedImmunity import ConductedImmunity
+from ConductedImmunityCalibration import ConductedImmunityCalibration
 
 import os
 import sys
