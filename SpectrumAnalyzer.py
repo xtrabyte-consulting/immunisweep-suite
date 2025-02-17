@@ -66,8 +66,6 @@ class HPE4440A:
         support the UNIT:POW command. In this example we assume:
             UNIT:POW VOLT  --> to display voltage
             UNIT:POW DBM   --> to display power in dBm
-            
-        Consult your manual for the correct command.
         
         :param units: A string specifying the units ('V' or 'DBM').
         """
@@ -76,40 +74,50 @@ class HPE4440A:
             raise ValueError("Unsupported unit. Use 'V', 'DBMV', 'DBUV', 'W' or 'DBM'.")
         self.send_command(f"UNIT:POW {unit}")
         time.sleep(0.1)
-        
-    def set_marker_at_frequency(self, frequency):
+
+    def activate_marker(self, marker_number=1):
         """
-        Set the analyzer center frequency to the specified value and place marker 1 at that frequency.
+        Activate the specified marker on the spectrum analyzer.
         
-        The sequence of commands is based on typical Keysight procedures:
-            - Set the center frequency.
-            - Activate Marker 1.
+        :param marker_number: The marker number to activate (1, 2, or 3).
+        """
+        if marker_number not in (1, 2, 3):
+            raise ValueError("Invalid marker number. Use 1, 2, or 3.")
+        self.send_command(f"CALC:MARK{marker_number}:MODE POS")
+        time.sleep(0.1)
+        
+    def set_frequency(self, frequency, marker_number=1):
+        """
+        Set the specified analyzer marker to the specified frequency (x).
+        
+        The sequence of commands is based on typical test procedures:
+            - Activate marker.
+            - Set the frequency.
+            - Read the amplitude.
         
         :param frequency: Frequency (in Hz) at which to place the marker.
         """
-        # Set center frequency
-        self.send_command(f"FREQ:CENT {frequency}")
-        time.sleep(0.1)
-        
-        # Activate Marker 1 at the center
-        self.send_command("CALC:MARK1:MODE POS")
+        if marker_number not in (1, 2, 3):
+            raise ValueError("Invalid marker number. Use 1, 2, or 3.")
+        if frequency < 3 or frequency > 26.5e9:
+            raise ValueError("Frequency out of range. Use 3 Hz - 26.5 GHz.")
+        self.send_command(f"CALC:MARK{marker_number}:X {frequency}")
         time.sleep(0.1)
     
-    def read_voltage(self, frequency):
+    def read_voltage(self, marker_number=1):
         """
         Return the measured amplitude (voltage) at the current marker frequency position.
         
         The sequence of commands is based on typical Keysight procedures:
-            - Set the center frequency.
-            - Activate Marker 1.
-            - Optionally, perform a peak search.
+            - Activate Marker (1).
+            - Set the frequency.
             - Query the marker amplitude with CALC:MARK1:Y?
         
         :param frequency: Frequency (in Hz) at which to read the voltage.
         :return: The measured voltage (float), or None if the read fails.
         """
         # Query the marker amplitude.
-        response = self.query("CALC:MARK1:Y?")
+        response = self.query(f"CALC:MARK{marker_number}:Y?")
         try:
             voltage = float(response)
             return voltage
