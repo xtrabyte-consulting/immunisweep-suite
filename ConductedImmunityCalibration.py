@@ -22,4 +22,4 @@ class ConductedImmunityCalibration(QMainWindow, Ui_MainWindow):
         self.spectrum_analyzer.set_marker_at_frequency(150e3)
         self.signal_generator.set_frequency(150e3)
         self.signal_generator.set_power(-6)
-        
+        #TODO: Set to DC Coupling
