@@ -633,9 +633,8 @@ class AgilentN5181A(QObject):
 class HPE4421B(QObject):
     identityReceived = pyqtSignal(str)
     error = pyqtSignal(str)
-    modStateSet = pyqtSignal(bool)
-    modFreqSet = pyqtSignal(int, float)
-    modDepthSet = pyqtSignal(float)
+    powerSet = pyqtSignal(float)
+    frequencySet = pyqtSignal(float)
     rfOutSet = pyqtSignal(bool)
     
     def __init__(self, serial_port: str = 'COM3'):
@@ -681,11 +680,17 @@ class HPE4421B(QObject):
     
     def __parse_power(self, power: str):
         self.power = float(power.strip())
+        self.powerSet.emit(self.power)
         return self.power
     
     def __parse_frequency(self, freq: str):
         self.frequency = float(freq.strip())
+        self.frequencySet.emit(self.frequency)
         return self.frequency
+    
+    def __parse_rf_out(self, state: str):
+        #TODO: Implement RF Out state parsing
+        return state
     
     def get_identity(self):
         self.command_queue.put(SCPICommand(f'{SCPI.Identity}?', self.__parse_identity))
@@ -703,6 +708,11 @@ class HPE4421B(QObject):
     def set_power(self, power: float):
         self.command_queue.put(SCPICommand(f'{SCPI.Power} {str(power)}', parser=None))
         self.command_queue.put(SCPICommand(f'{SCPI.Power}?', self.__parse_power))
+
+    def set_rf_out(self, on: bool):
+        #TODO; Ensure command
+        self.command_queue.put(SCPICommand(f'{SCPI.RFOut} {SCPI.On.value if on else SCPI.Off.value}', parser=None))
+        self.command_queue.put(SCPICommand(f'{SCPI.RFOut}?', self.__parse_rf_out))
 
     def stop_thread(self):
         self.is_running = False
