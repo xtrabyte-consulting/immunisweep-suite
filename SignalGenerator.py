@@ -638,7 +638,7 @@ class HPE4421B(QObject):
     modDepthSet = pyqtSignal(float)
     rfOutSet = pyqtSignal(bool)
     
-    def __init__(self, serial_port: str = 'COM2'):
+    def __init__(self, serial_port: str = 'COM3'):
         super().__init__()
         self.serial_port = serial_port
         self.instrument = None
@@ -648,16 +648,12 @@ class HPE4421B(QObject):
         self.frequency = 150.0
         self.command_queue = queue.Queue()
         self.command_lock = threading.Lock()
-        self.start_frequency = 150.0
-        self.stop_frequency = 80000.0
         self.clearing = False
         self.detected = False
         
     def connect_to_instrument(self):
         try:
-            self.instrument = serial.Serial(self.serial_port, baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=0.5)
-            
-            self.instrument = serial.Serial('COM3', baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1, xonxoff=False, rtscts=False)
+            self.instrument = serial.Serial(self.serial_port, baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1, xonxoff=False, rtscts=False)
             self.instrument.setDTR(True)
             self.command_thread = threading.Thread(target=self.process_commands)
             self.is_running = True
@@ -707,6 +703,10 @@ class HPE4421B(QObject):
     def set_power(self, power: float):
         self.command_queue.put(SCPICommand(f'{SCPI.Power} {str(power)}', parser=None))
         self.command_queue.put(SCPICommand(f'{SCPI.Power}?', self.__parse_power))
+
+    def stop_thread(self):
+        self.is_running = False
+        self.command_thread.join()
             
     def process_commands(self):
         #TODO: Implement command processing for HPE4421B
