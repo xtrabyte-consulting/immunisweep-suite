@@ -531,6 +531,8 @@ class RadiatedImmunity(QMainWindow, Ui_MainWindow):
         self.label_chargeLevel.setText(f'{str(level)} %')
         
     def on_fieldProbe_temperatureReceived(self, temp: int):
+        if temp > 256:
+            temp = 256 - temp
         signed_temp = np.int8(temp)
         self.label_temperature.setText(f'{str(signed_temp)} °F')
     
@@ -620,7 +622,8 @@ class RadiatedImmunity(QMainWindow, Ui_MainWindow):
 
     def on_sweep_incomplete_button_clicked(self, button):
         self.alert_window.close()
-        if button.text() == 'Yes':
+        print("Button Clicked: " + str(button.text()))
+        if button.text() == '&Yes':
             self.field_controller.sweep_missed_frequencies()
         else:
             self.export_field_data()
