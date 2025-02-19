@@ -13,10 +13,11 @@ class FieldController(QObject):
     frequencyUpdated = pyqtSignal(float)
     powerUpdated = pyqtSignal(float)
     fieldUpdated = pyqtSignal(float, float, float, float)
-    sweepCompleted = pyqtSignal()
+    sweepCompleted = pyqtSignal(list)
     sweepStatus = pyqtSignal(float)
     highFieldDetected = pyqtSignal(str)
     powerLimitExceeded = pyqtSignal(str)
+    missedFieldWarning = pyqtSignal(str)
     startDwell = pyqtSignal(int)
     
     def __init__(self, signal_generator: AgilentN5181A, field_probe: ETSLindgrenHI6006, pid_controller: PID | None):
@@ -32,6 +33,8 @@ class FieldController(QObject):
         self.is_sweeping = False
         self.last_step = False
         self.high_field_detected = False
+        self.sweeping_missed = False
+        self.missed_frequencies = []
         self.target_field = 1.0
         self.threshold = 1.5
         self.base_power = -30
@@ -63,8 +66,9 @@ class FieldController(QObject):
         
         return log_file
     
-    def log_warning(self, warning: str):
+    def log_warning(self, frequency: float, warning: str):
         '''Log data to a file.'''
+        self.missed_frequencies.append(frequency)
         with open(self.log_file_path, "a") as log_file:
             log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - High Field Detected Warning: {warning}\n")
             
@@ -72,6 +76,8 @@ class FieldController(QObject):
         """Start the frequency sweep with the specified range, dwell and step term."""
         self.is_sweeping = True
         self.last_step = False
+        self.sweeping_missed = False
+        self.missed_frequencies = []
         self.current_freq = self.start_freq
         # Set the signal generator to low power to start
         self.signal_generator.setPower(self.base_power)
@@ -79,6 +85,22 @@ class FieldController(QObject):
         self.signal_generator.setModulationState(True)
         sleep(1.0) # Wait for power to stabilize
         print(f"Starting sweep from {self.start_freq} to {self.stop_freq} with a step term of {self.sweep_term}")
+        self.step_sweep()
+
+    def sweep_missed_frequencies(self):
+        '''Sweep the missed frequencies again.'''
+        self.is_sweeping = True
+        self.last_step = False
+        self.sweeping_missed = True
+        self.start_freq = self.missed_frequencies[0]
+        self.stop_freq = self.missed_frequencies[-1]
+        self.current_freq = self.missed_frequencies[0]
+        self.missed_frequencies.pop(0)
+        self.signal_generator.setPower(self.base_power)
+        self.signal_generator.setRFOut(True)
+        self.signal_generator.setModulationState(True)
+        sleep(0.5) # Wait for power to stabilize
+        print(f"Sweeping back through from {self.start_freq} to {self.stop_freq} with a step term of {self.sweep_term}")
         self.step_sweep()
 
     def step_sweep(self):
@@ -113,12 +135,16 @@ class FieldController(QObject):
             
 
             # Move to the next frequency step
-            self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
+            if self.sweeping_missed:
+                self.current_freq = self.missed_frequencies[0]
+                self.missed_frequencies.pop(0)
+            else:
+                self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
             print("Power adjusted. Moving to next frequency step: ", self.current_freq)
             if self.last_step:
                 print("Last step reached")
                 self.is_sweeping = False
-            if self.current_freq > self.stop_freq:
+            if self.current_freq >= self.stop_freq:
                 print("End of sweep range reached: Last step")
                 self.current_freq = self.stop_freq
                 self.last_step = True
@@ -126,7 +152,7 @@ class FieldController(QObject):
             
             # Sweep is complete
             print("Sweep Completed")
-            self.sweepCompleted.emit()
+            self.sweepCompleted.emit(self.missed_frequencies)
             self.is_sweeping = False
             self.signal_generator.setRFOut(False)
             self.signal_generator.setModulationState(False)
@@ -213,11 +239,8 @@ class FieldController(QObject):
             
             # Check if the field level is too high. If so, emit a signal to notify the user
             if current_field_level > (self.target_field * 2.0):
-                if not self.high_field_detected:
-                    self.highFieldDetected.emit(self.log_file_path)
-                    self.high_field_detected = True
                 warning_message = f'Field level exceeded 2x target level: {current_field_level} V/m \n At frequency: {self.current_freq} MHz \n And power: {self.current_power} dBm'
-                self.log_warning(warning_message)
+                self.log_warning(self.current_freq, warning_message)
                 break
             
             # Get the current power level from the signal generator
@@ -244,12 +267,8 @@ class FieldController(QObject):
                         self.stop_sweep()
                         break
                     else:
-                        if not power_limit_exceeded:
-                            warning_message = f'Power limit exceeded: {self.current_power} dBm at frequency: {self.current_freq} MHz and field level: {current_field_level} V/m. \nIssue logged. Continuing sweep.'
-                            self.powerLimitExceeded.emit(warning_message)
-                            power_limit_exceeded = True
                         warning_message = f'Field level below target level: {current_field_level} V/m, \n at frequency: {self.current_freq} MHz, \n and power: {self.current_power} dBm'
-                        self.log_warning(warning_message)
+                        self.log_warning(self.current_freq, warning_message)
                         self.current_power = self.base_power
                         self.current_power = self.signal_generator.setPower(self.current_power)
                         # Move to the next frequency step

@@ -604,9 +604,27 @@ class RadiatedImmunity(QMainWindow, Ui_MainWindow):
         print("Power Set: " + str(self.output_power))
         self.lcdNumber_powerOut.display(power)
     
-    def on_fieldController_sweepCompleted(self):
+    def on_fieldController_sweepCompleted(self, missed_freqs: list):
         self.complete_sweep()
-        self.export_field_data()
+        if len(missed_freqs) > 0:
+            message = "Field level not met at the following frequencies: " + str(missed_freqs) + ". Check log for details. Would you like to sweep back through these frequencies?"
+            self.alert_window = QMessageBox(self)
+            self.alert_window.setIcon(QMessageBox.Warning)
+            self.alert_window.setText(message)
+            self.alert_window.setWindowTitle('Field Sweep Incomplete')
+            self.alert_window.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            self.alert_window.buttonClicked.connect(self.on_sweep_incomplete_button_clicked)
+            self.alert_window.show()
+        else:
+            self.export_field_data()
+
+    def on_sweep_incomplete_button_clicked(self, button):
+        self.alert_window.close()
+        if button.text() == 'Yes':
+            self.field_controller.sweep_missed_frequencies()
+        else:
+            self.export_field_data()
+        self.alert_window = None
         
     def export_field_data(self):
         self.export_widget = ExportWidget(self.field_data)
