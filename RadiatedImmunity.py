@@ -624,6 +624,10 @@ class RadiatedImmunity(QMainWindow, Ui_MainWindow):
         self.alert_window.close()
         print("Button Clicked: " + str(button.text()))
         if button.text() == '&Yes':
+            self.sweep_in_progress = True
+            self.sweep_timer.start(100)
+            self.field_timer.start(500)
+            self.toggleSweepUI(enabled=False)
             self.field_controller.sweep_missed_frequencies()
         else:
             self.export_field_data()
