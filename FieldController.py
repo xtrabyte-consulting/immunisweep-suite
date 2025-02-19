@@ -136,18 +136,22 @@ class FieldController(QObject):
 
             # Move to the next frequency step
             if self.sweeping_missed:
+                if len(self.missed_frequencies) == 0:
+                    print("Missed frequencies swept again")
+                    self.is_sweeping = False
+                    return
                 self.current_freq = self.missed_frequencies[0]
                 self.missed_frequencies.pop(0)
             else:
                 self.current_freq = self.current_freq + (self.current_freq * self.sweep_term)
-            print("Power adjusted. Moving to next frequency step: ", self.current_freq)
-            if self.last_step:
-                print("Last step reached")
-                self.is_sweeping = False
-            if self.current_freq >= self.stop_freq:
-                print("End of sweep range reached: Last step")
-                self.current_freq = self.stop_freq
-                self.last_step = True
+                print("Power adjusted. Moving to next frequency step: ", self.current_freq)
+                if self.current_freq >= self.stop_freq:
+                    print("End of sweep range reached: Last step")
+                    self.current_freq = self.stop_freq
+                    self.last_step = True
+                if self.last_step:
+                    print("Last step reached")
+                    self.is_sweeping = False
         else:
             
             # Sweep is complete
