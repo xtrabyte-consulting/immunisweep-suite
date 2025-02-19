@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
 from qt_material import apply_stylesheet
 
 from RadiatedImmunity import RadiatedImmunity
-from ConductedImmunity import ConductedImmunity
+#from ConductedImmunity import ConductedImmunity
 from ConductedImmunityCalibration import ConductedImmunityCalibration
 
 import os
@@ -90,8 +90,8 @@ if __name__ == '__main__':
     if selection_dialog.exec_() == QDialog.Accepted:
         if selection_dialog.selected_test == RADIATED_IMMUNITY:
             window = RadiatedImmunity()
-        elif selection_dialog.selected_test == CONDUCTED_IMMUNITY:
-            window = ConductedImmunity()
+        #elif selection_dialog.selected_test == CONDUCTED_IMMUNITY:
+        #    window = ConductedImmunity()
         elif selection_dialog.selected_test == CONDUCTED_IMMUNITY_CALIBRATION:
             window = ConductedImmunityCalibration()
         else:
