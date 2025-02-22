@@ -25,6 +25,29 @@ class ConductedImmunityCalController:
         self.signal_generator.set_frequency(150e3)
         self.signal_generator.set_power(-20)
         
-    def signal_generator_frequency_set(self):
-        print("Signal Generator Frequency Set")
+    def signal_generator_frequency_set(self, frequency):
+        print("Signal Generator Frequency Set: ", frequency)
+        self.spectrum_analyzer.set_frequency(frequency)
+        self.signal_generator.powerSet.connect(self.signal_generator_power_set)
+        self.signal_generator.set_power(-20)
 
+    def signal_generator_power_set(self, power):
+        print("Signal Generator Power Set: ", power)
+        self.adjust_signal_generator_power()
+
+    def adjust_signal_generator_power(self):
+        voltage = self.spectrum_analyzer.read_voltage()
+        if voltage == 3.0:
+            self.signal_generator.powerSet.disconnect(self.signal_generator_power_set)
+            self.signal_generator.set_power(-20)
+            frequency = self.signal_generator.get_frequency()
+            frequency *= 1.01
+            self.signal_generator.set_frequency(frequency)
+        elif voltage < 3.0:
+            power = self.signal_generator.get_power()
+            power += 0.1
+            self.signal_generator.set_power(power)
+        elif voltage > 3.0:
+            power = self.signal_generator.get_power()
+            power -= 0.1
+            self.signal_generator.set_power(power)
