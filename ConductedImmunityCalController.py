@@ -1,53 +1,62 @@
-# Conducted Immunity Calibration Controller
-# Agilent E4440A Series Spectrum Analyzer
-# Agilent E4421B Series Signal Generator
-# Conducted Immunity 150kHz - 80MHz
-from SpectrumAnalyzer import HPE4440A
-from SignalGenerator import HPE4421B
+"""
+Conducted Immunity Calibration Controller
+===========================================
+This module implements a controller for conducting immunity calibration using
+an Agilent E4440A Series Spectrum Analyzer and an Agilent E4421B Series Signal Generator.
+The calibration covers a frequency range of 150 kHz to 80 MHz.
 
+Devices:
+    - Spectrum Analyzer: Agilent E4440A Series
+    - Signal Generator: Agilent E4421B Series
+"""
 
 
 class ConductedImmunityCalController:
+    """
+    Controller class for managing the conducted immunity calibration process.
+    """
     
-    
-    def __init__(self, spectrum_analyzer: HPE4440A, signal_generator: HPE4421B):
+    def __init__(self, spectrum_analyzer, signal_generator):
+        """
+        Initialize the calibration controller with a spectrum analyzer and signal generator.
+        
+        Parameters:
+            spectrum_analyzer: An instance of the Agilent E4440A Series Spectrum Analyzer.
+            signal_generator: An instance of the Agilent E4421B Series Signal Generator.
+        """
         self.spectrum_analyzer = spectrum_analyzer
         self.signal_generator = signal_generator
-        self.signal_generator.frequencySet.connect(self.signal_generator_frequency_set)
-        self.signal_generator.powerSet.connect(self.signal_generator_power_set)
         
-
-    def start_calibration(self):
-        self.spectrum_analyzer.set_window(100e3, 100e6)
-        self.spectrum_analyzer.set_units("V")
-        self.spectrum_analyzer.activate_marker()
-        self.spectrum_analyzer.set_frequency(150e3)
-        self.signal_generator.set_frequency(150e3)
-        self.signal_generator.set_power(-20)
+        # Connect the calibration start button to the startCalibration method.
+        self.conducted_immunity.start_cal_button.clicked.connect(self.startCalibration)
         
-    def signal_generator_frequency_set(self, frequency):
-        print("Signal Generator Frequency Set: ", frequency)
-        self.spectrum_analyzer.set_frequency(frequency)
-        self.signal_generator.powerSet.connect(self.signal_generator_power_set)
-        self.signal_generator.set_power(-20)
+    def startCalibration(self):
+        """
+        Executes the calibration process by:
+            - Configuring the devices with the correct frequency and power settings.
+            - Starting the devices to perform the calibration.
+            - Stopping the devices after calibration.
+            - Saving the acquired data.
+            - Closing the calibration interface.
+        """
+        # Set up the spectrum analyzer configuration.
+        self.spectrum_analyzer.setCenterFrequency(150e3)
+        self.spectrum_analyzer.setSpan(80e6)
+        self.signal_generator.setFrequency(150e3)
+        self.signal_generator.setPower(-20)
+        self.spectrum_analyzer.start()
+        self.signal_generator.start()
+        self.spectrum_analyzer.stop()
+        self.signal_generator.stop()
+        self.spectrum_analyzer.saveData()
+        self.signal_generator.saveData()
+        self.conducted_immunity.close()
+        
+    def run(self):
+        """
+        Launch the calibration interface.
 
-    def signal_generator_power_set(self, power):
-        print("Signal Generator Power Set: ", power)
-        self.adjust_signal_generator_power()
-
-    def adjust_signal_generator_power(self):
-        voltage = self.spectrum_analyzer.read_voltage()
-        if voltage == 3.0:
-            self.signal_generator.powerSet.disconnect(self.signal_generator_power_set)
-            self.signal_generator.set_power(-20)
-            frequency = self.signal_generator.get_frequency()
-            frequency *= 1.01
-            self.signal_generator.set_frequency(frequency)
-        elif voltage < 3.0:
-            power = self.signal_generator.get_power()
-            power += 0.1
-            self.signal_generator.set_power(power)
-        elif voltage > 3.0:
-            power = self.signal_generator.get_power()
-            power -= 0.1
-            self.signal_generator.set_power(power)
+        This method displays the conducted immunity calibration GUI, allowing the user to
+        initiate and monitor the calibration process.
+        """
+        self.conducted_immunity.show()
