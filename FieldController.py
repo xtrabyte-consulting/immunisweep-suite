@@ -335,12 +335,12 @@ class FieldController(QObject):
     
     def getSweepTime(self) -> float:
         """
-        Estimate the total sweep time, including a 10% overhead for settling time.
+        Estimate the total sweep time, including a 50% overhead for settling time.
 
         Returns:
             float: The total estimated sweep time in seconds.
         """
-        return (self.dwell_time_ms / 1000) * self.getStepCount() * 1.1 # Assume 10% overhead for settling time
+        return (self.dwell_time_ms / 1000) * self.getStepCount() * 1.5 # Assume 50% overhead for settling time
     
         
     def adjust_power_to_target_level(self):

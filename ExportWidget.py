@@ -176,7 +176,7 @@ class ExportWidget(QWidget):
         
     def get_level(self, field):
         """
-        Determine the level category based on the field strength.
+        Determine the test level category based on the field strength.
         
         Parameters:
             field (float): The measured field strength.
