@@ -205,6 +205,7 @@ class FieldController(QObject):
             # Sweep completed: disable outputs and emit final signals
             print("Sweep Completed")
             self.sweepCompleted.emit(self.missed_frequencies)
+            self.sweeping_missed = False
             self.is_sweeping = False
             self.signal_generator.setRFOut(False)
             self.signal_generator.setModulationState(False)
